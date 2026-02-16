@@ -37,10 +37,25 @@ def upload_audio(request):
             
             # 1. Save the file and record to the database
             transcript_instance.save()
+            project = transcript_instance.project
+
+            # 2. ALSO save a copy to the project's specified physical folder
+            try:
+                target_dir = os.path.join(project.folder_path, project.name, 'audio')
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir, exist_ok=True)
+                
+                filename = os.path.basename(transcript_instance.audio_file.name)
+                target_path = os.path.join(target_dir, filename)
+                
+                with transcript_instance.audio_file.open('rb') as f:
+                    with open(target_path, 'wb+') as destination:
+                        for chunk in f.chunks():
+                            destination.write(chunk)
+            except Exception as e:
+                print(f"Error saving to external folder: {e}")
             
-            # 2. TRIGGER TRANSCRIPTION HERE
-            # Now that the file is saved, you can access its path:
-            file_path = transcript_instance.audio_file.path
+            # 3. TRIGGER TRANSCRIPTION HERE (Placeholder)
             
             # Example logic (pseudo-code):
             # text_result = run_whisper_ai(file_path)
@@ -104,7 +119,8 @@ def save_record(request):
 
         # 2. ALSO save a copy to the project's specified physical folder
         try:
-            target_dir = project.folder_path
+            # New structure: <base_path>/<project_name>/audio/
+            target_dir = os.path.join(project.folder_path, project.name, 'audio')
             if not os.path.exists(target_dir):
                 os.makedirs(target_dir, exist_ok=True)
             
