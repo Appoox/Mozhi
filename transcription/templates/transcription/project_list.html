@@ -82,12 +82,16 @@
     {% if projects %}
     <ul class="project-list">
         {% for project in projects %}
-        <li class="project-card">
-            <div>
-                <h2>{{ project.name }}</h2>
-                <span class="project-meta">Sample rate: {{ project.sample_rate }} Hz</span>
-            </div>
-            <span class="project-meta">{{ project.created_at|date:"d M Y" }}</span>
+        <li>
+            <a href="{% url 'project_detail' project.id %}" style="text-decoration: none; color: inherit;">
+                <div class="project-card">
+                    <div>
+                        <h2>{{ project.name }}</h2>
+                        <span class="project-meta">Sample rate: {{ project.sample_rate }} Hz</span>
+                    </div>
+                    <span class="project-meta">{{ project.created_at|date:"d M Y" }}</span>
+                </div>
+            </a>
         </li>
         {% endfor %}
     </ul>
