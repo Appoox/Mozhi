@@ -333,9 +333,10 @@
 
         function updateTimer() {
             const now = Date.now();
-            const diff = new Date(now - startTime);
-            const m = diff.getMinutes().toString().padStart(2, '0');
-            const s = diff.getSeconds().toString().padStart(2, '0');
+            const diff = now - startTime;
+            const totalSeconds = Math.floor(diff / 1000);
+            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
             timerDisplay.textContent = `${m}:${s}`;
         }
 
