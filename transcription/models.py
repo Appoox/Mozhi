@@ -14,7 +14,7 @@ class Project(models.Model):
     ]
     sample_rate = models.IntegerField(choices=SAMPLE_RATE_CHOICES, default=44100, help_text="Sample rate in Hz")
     created_at = models.DateTimeField(auto_now_add=True)
-    folder_path = models.CharField(max_length=255, default='.', help_text="Select a folder to save audio files")
+    folder_path = models.CharField(max_length=255, default='./', help_text="Select a folder to save audio files")
 
     def __str__(self):
         return self.name

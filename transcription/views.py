@@ -47,3 +47,28 @@ def upload_audio(request):
         form = TranscriptUploadForm()
 
     return render(request, 'transcription/transcription.html', {'form': form})
+
+from django.http import JsonResponse
+import os
+from django.conf import settings
+
+def browse_folders(request):
+    """View to list subdirectories of a given path for the folder picker."""
+    path = request.GET.get('path', str(settings.BASE_DIR))
+    
+    # Basic security: ensure path is within BASE_DIR or allowed areas
+    # For now, let's keep it simple but functional.
+    
+    try:
+        subdirs = [
+            d for d in os.listdir(path) 
+            if os.path.isdir(os.path.join(path, d)) and not d.startswith('.')
+        ]
+        subdirs.sort()
+        return JsonResponse({
+            'current_path': path,
+            'parent_path': os.path.dirname(path),
+            'subdirs': subdirs
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

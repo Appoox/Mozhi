@@ -60,6 +60,95 @@
             color: #333;
             margin-left: 8px;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .folder-list {
+            list-style: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .folder-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .folder-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .folder-item i {
+            margin-right: 10px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .help-text {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+        }
     </style>
 </head>
 
@@ -67,17 +156,114 @@
     <h1>Create New Project</h1>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
 
-        <datalist id="folders-list">
-            {% for folder in form.folder_suggestions %}
-            <option value="{{ folder }}">
-                {% endfor %}
-        </datalist>
+        {% for field in form %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            <div style="display: flex; gap: 8px; align-items: flex-start;">
+                {{ field }}
+                {% if field.name == 'folder_path' %}
+                <button type="button" class="btn btn-secondary" id="browse-btn"
+                    style="white-space: nowrap; margin-left: 0;">Browse...</button>
+                {% endif %}
+            </div>
+            {% if field.help_text %}
+            <p class="help-text">{{ field.help_text }}</p>
+            {% endif %}
+            {{ field.errors }}
+        </div>
+        {% endfor %}
 
-        <button type="submit" class="btn btn-primary">Create</button>
-        <a href="{% url 'project_list' %}" class="btn btn-secondary">Cancel</a>
+        <div style="margin-top: 24px;">
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a href="{% url 'project_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
     </form>
+
+    <!-- Folder Picker Modal -->
+    <div id="folderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Browse Folders</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="breadcrumb" id="currentPath">Loading...</div>
+            <ul class="folder-list" id="folderList"></ul>
+            <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" id="goUpBtn">Up One Level</button>
+                <button type="button" class="btn btn-primary" id="selectFolderBtn">Select Current</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById("folderModal");
+        const browseBtn = document.getElementById("browse-btn");
+        const closeBtn = document.querySelector(".close");
+        const folderList = document.getElementById("folderList");
+        const currentPathDisplay = document.getElementById("currentPath");
+        const folderInput = document.getElementById("id_folder_path");
+        const goUpBtn = document.getElementById("goUpBtn");
+        const selectFolderBtn = document.getElementById("selectFolderBtn");
+
+        let currentPath = "";
+        let parentPath = "";
+
+        async function loadFolders(path = "") {
+            currentPathDisplay.textContent = "Loading...";
+            folderList.innerHTML = "";
+
+            try {
+                const response = await fetch(`/api/browse-folders/?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+
+                currentPath = data.current_path;
+                parentPath = data.parent_path;
+                currentPathDisplay.textContent = currentPath;
+
+                if (data.subdirs.length === 0) {
+                    folderList.innerHTML = '<li class="folder-item">No subdirectories found</li>';
+                } else {
+                    data.subdirs.forEach(dir => {
+                        const li = document.createElement("li");
+                        li.className = "folder-item";
+                        li.innerHTML = `<span>📁 ${dir}</span>`;
+                        li.onclick = () => loadFolders(currentPath + (currentPath.endsWith('/') || currentPath.endsWith('\\') ? '' : '/') + dir);
+                        folderList.appendChild(li);
+                    });
+                }
+            } catch (err) {
+                alert("Failed to fetch folders");
+            }
+        }
+
+        browseBtn.onclick = () => {
+            modal.style.display = "block";
+            loadFolders(folderInput.value || "");
+        };
+
+        closeBtn.onclick = () => modal.style.display = "none";
+
+        window.onclick = (event) => {
+            if (event.target == modal) modal.style.display = "none";
+        };
+
+        goUpBtn.onclick = () => {
+            if (currentPath && parentPath && currentPath !== parentPath) {
+                loadFolders(parentPath);
+            }
+        };
+
+        selectFolderBtn.onclick = () => {
+            folderInput.value = currentPath;
+            modal.style.display = "none";
+        };
+    </script>
 </body>
 
 </html>

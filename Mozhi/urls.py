@@ -25,6 +25,7 @@ urlpatterns = [
     path('', views.project_list, name='project_list'),
     path('projects/create/', views.create_project, name='create_project'),
     path('transcription/', views.upload_audio, name='transcription'),
+    path('api/browse-folders/', views.browse_folders, name='browse_folders'),
 ]
 
 
