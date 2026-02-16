@@ -24,8 +24,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.project_list, name='project_list'),
     path('projects/create/', views.create_project, name='create_project'),
+    path('projects/<uuid:project_id>/', views.project_detail, name='project_detail'),
     path('transcription/', views.upload_audio, name='transcription'),
     path('api/browse-folders/', views.browse_folders, name='browse_folders'),
+    path('api/save-record/', views.save_record, name='save_record'),
 ]
 
 
