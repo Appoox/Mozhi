@@ -25,6 +25,7 @@ urlpatterns = [
     path('', views.project_list, name='project_list'),
     path('projects/create/', views.create_project, name='create_project'),
     path('projects/<uuid:project_id>/', views.project_detail, name='project_detail'),
+    path('projects/<uuid:project_id>/delete/', views.delete_project, name='delete_project'),
     path('transcription/', views.upload_audio, name='transcription'),
     path('api/save-record/', views.save_record, name='save_record'),
 ]

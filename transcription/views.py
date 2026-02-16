@@ -102,3 +102,25 @@ def save_record(request):
         return JsonResponse({'status': 'success', 'transcript_id': str(transcript_instance.id)})
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+import shutil
+
+def delete_project(request, project_id):
+    """View to delete a project and optionally its physical files."""
+    if request.method == 'POST':
+        project = get_object_or_404(Project, id=project_id)
+        delete_files = request.POST.get('delete_files') == 'true'
+
+        try:
+            if delete_files:
+                target_dir = os.path.join(project.folder_path, project.name)
+                if os.path.exists(target_dir):
+                    shutil.rmtree(target_dir)
+            
+            # Delete project from DB (this cascades to Transcripts)
+            project.delete()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
