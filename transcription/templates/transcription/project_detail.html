@@ -245,6 +245,7 @@
                 </audio>
                 <span class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">Uploaded: {{
                     transcript.created_at|date:"d M Y H:i" }}</span>
+                <button class="delete-transcript-btn" data-id="{{ transcript.id }}">Delete Item</button>
             </div>
             <div class="transcript-section">
                 <h3>Transcription</h3>
@@ -259,15 +260,14 @@
         </div>
         {% empty %}
         <div class="empty-state">
-            <p>No audio files uploaded to this project yet.</p>
-            <a href="{% url 'transcription' %}" class="btn">Upload Audio</a>
+            <p>No recordings yet. Click "Record Audio" to get started!</p>
         </div>
         {% endfor %}
     </div>
 
     <!-- Recording Modal -->
     <div id="recordingModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 600px; margin-top: 5%;">
             <div class="modal-header">
                 <h2>Record Audio</h2>
                 <span class="close" id="closeRecording">&times;</span>
@@ -298,7 +298,80 @@
         </div>
     </div>
 
+    <!-- Transcript Deletion Modal -->
+    <div id="deleteTranscriptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Delete Item</h2>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this audio and transcript?</p>
+                <label class="checkbox-group">
+                    <input type="checkbox" id="deleteAudioFileCheckbox">
+                    Delete local folder and files
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background: #e0e0e0; color: #333;"
+                    id="cancelDeleteTranscriptBtn">Cancel</button>
+                <button class="btn" style="background: #c0392b; color: white;" id="confirmDeleteTranscriptBtn">Confirm
+                    Delete</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Transcript Deletion Logic
+        const deleteTranscriptModal = document.getElementById('deleteTranscriptModal');
+        const deleteAudioFileCheckbox = document.getElementById('deleteAudioFileCheckbox');
+        const cancelDeleteTranscriptBtn = document.getElementById('cancelDeleteTranscriptBtn');
+        const confirmDeleteTranscriptBtn = document.getElementById('confirmDeleteTranscriptBtn');
+
+        let transcriptToDeleteId = null;
+
+        document.querySelectorAll('.delete-transcript-btn').forEach(btn => {
+            btn.onclick = () => {
+                transcriptToDeleteId = btn.getAttribute('data-id');
+                deleteAudioFileCheckbox.checked = false;
+                deleteTranscriptModal.style.display = 'block';
+            };
+        });
+
+        cancelDeleteTranscriptBtn.onclick = () => {
+            deleteTranscriptModal.style.display = 'none';
+        };
+
+        confirmDeleteTranscriptBtn.onclick = async () => {
+            if (!transcriptToDeleteId) return;
+
+            confirmDeleteTranscriptBtn.disabled = true;
+            confirmDeleteTranscriptBtn.textContent = 'Deleting...';
+
+            const formData = new FormData();
+            formData.append('delete_files', deleteAudioFileCheckbox.checked);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            try {
+                const response = await fetch(`/transcripts/${transcriptToDeleteId}/delete/`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Failed to delete transcript.');
+            } finally {
+                confirmDeleteTranscriptBtn.disabled = false;
+                confirmDeleteTranscriptBtn.textContent = 'Confirm Delete';
+                deleteTranscriptModal.style.display = 'none';
+            }
+        };
+
         // Recording Logic
         const recordingModal = document.getElementById('recordingModal');
         const recordBtn = document.getElementById('recordBtn');
@@ -524,6 +597,8 @@
             if (event.target == recordingModal) {
                 recordingModal.style.display = 'none';
                 stopRecordingInternal();
+            } else if (event.target == deleteTranscriptModal) {
+                deleteTranscriptModal.style.display = 'none';
             }
         };
     </script>
