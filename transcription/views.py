@@ -1,6 +1,22 @@
 from django.shortcuts import render, redirect
-from .forms import TranscriptUploadForm
-from .models import Transcript
+from .forms import TranscriptUploadForm, ProjectForm
+from .models import Transcript, Project
+
+
+def project_list(request):
+    projects = Project.objects.all().order_by('-created_at')
+    return render(request, 'transcription/project_list.html', {'projects': projects})
+
+
+def create_project(request):
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('project_list')
+    else:
+        form = ProjectForm()
+    return render(request, 'transcription/create_project.html', {'form': form})
 
 def upload_audio(request):
     if request.method == 'POST':

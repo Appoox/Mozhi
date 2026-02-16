@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Projects - Mozhi</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        h1 {
+            color: #1a1a2e;
+        }
+
+        .project-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .project-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project-card h2 {
+            margin: 0 0 4px 0;
+            font-size: 1.1rem;
+        }
+
+        .project-meta {
+            color: #777;
+            font-size: 0.85rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-decoration: none;
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-header">
+        <h1>Projects</h1>
+        <a href="{% url 'create_project' %}" class="btn">+ New Project</a>
+    </div>
+
+    {% if projects %}
+    <ul class="project-list">
+        {% for project in projects %}
+        <li class="project-card">
+            <div>
+                <h2>{{ project.name }}</h2>
+                <span class="project-meta">Sample rate: {{ project.sample_rate }} Hz</span>
+            </div>
+            <span class="project-meta">{{ project.created_at|date:"d M Y" }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state">
+        <p>No projects yet.</p>
+    </div>
+    {% endif %}
+</body>
+
+</html>

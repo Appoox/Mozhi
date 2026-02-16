@@ -22,6 +22,8 @@ from transcription import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', views.project_list, name='project_list'),
+    path('projects/create/', views.create_project, name='create_project'),
     path('transcription/', views.upload_audio, name='transcription'),
 ]
 
