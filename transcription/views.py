@@ -113,9 +113,10 @@ def save_record(request):
             target_path = os.path.join(target_dir, filename)
             
             # Copy the file
-            with open(target_path, 'wb+') as destination:
-                for chunk in transcript_instance.audio_file.chunks():
-                    destination.write(chunk)
+            with transcript_instance.audio_file.open('rb') as f:
+                with open(target_path, 'wb+') as destination:
+                    for chunk in f.chunks():
+                        destination.write(chunk)
         except Exception as e:
             # We log the error but the record is already saved in DB
             print(f"Error saving to external folder: {e}")
