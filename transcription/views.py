@@ -45,8 +45,9 @@ def upload_audio(request):
                 if not os.path.exists(target_dir):
                     os.makedirs(target_dir, exist_ok=True)
                 
-                # Use original filename or a secure alternative
-                filename = audio_file.name
+                # Use Transcript UUID for filename
+                ext = os.path.splitext(audio_file.name)[1]
+                filename = f"{transcript_instance.id}{ext}"
                 target_path = os.path.join(target_dir, filename)
                 
                 with open(target_path, 'wb+') as destination:
@@ -83,27 +84,29 @@ def save_record(request):
                 if not user:
                     return JsonResponse({'status': 'error', 'error': 'No user available'}, status=400)
 
-            # Manually save audio to project folder
+            # 1. Create Transcript record FIRST to get UUID
+            transcript_instance = Transcript.objects.create(
+                project=project,
+                user=user,
+                transcript=transcript_text,
+                audio_file="PENDING"
+            )
+
+            # 2. Save audio to project folder using the UUID
             target_dir = os.path.join(project.folder_path, project.name, 'audio')
             if not os.path.exists(target_dir):
                 os.makedirs(target_dir, exist_ok=True)
             
-            # Generate filename (mozhi_timestamp.wav)
-            import time
-            filename = f"record_{int(time.time())}.wav"
+            filename = f"{transcript_instance.id}.wav"
             target_path = os.path.join(target_dir, filename)
             
             with open(target_path, 'wb+') as destination:
                 for chunk in audio_file.chunks():
                     destination.write(chunk)
 
-            # Save Transcript record to DB
-            transcript_instance = Transcript.objects.create(
-                project=project,
-                user=user,
-                transcript=transcript_text,
-                audio_file=filename
-            )
+            # 3. Update the record with actual filename
+            transcript_instance.audio_file = filename
+            transcript_instance.save()
 
             return JsonResponse({'status': 'success', 'transcript_id': str(transcript_instance.id)})
         except Exception as e:
