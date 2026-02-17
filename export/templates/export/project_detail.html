@@ -158,6 +158,44 @@
         .close:hover {
             color: #000;
         }
+
+        /* Loading Overlay Styles */
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: inherit;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
     </style>
 </head>
 
@@ -165,6 +203,13 @@
     <div class="nav-bar">
         <a href="{% url 'export:project_list' %}" class="btn btn-secondary">← Back to Projects</a>
         <button type="button" class="btn" id="exportJsonBtn" style="background-color: #4a90e2;">📥 Export JSON</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Exporting... Please wait</div>
+        <div id="progressCounter" style="margin-top: 10px; font-size: 1rem; opacity: 0.9;"></div>
     </div>
 
     <h1>{{ project.name }}</h1>
@@ -231,11 +276,16 @@
     <script>
         // Export JSON Logic
         const exportJsonBtn = document.getElementById('exportJsonBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const progressCounter = document.getElementById('progressCounter');
+
         if (exportJsonBtn) {
             exportJsonBtn.onclick = async () => {
                 exportJsonBtn.disabled = true;
-                const originalText = exportJsonBtn.textContent;
-                exportJsonBtn.textContent = '⌛ Exporting...';
+                loadingOverlay.style.display = 'flex';
+                loadingText.textContent = 'Exporting... Please wait';
+                progressCounter.textContent = '';
 
                 try {
                     const response = await fetch('{% url "export:export_project_json" project.id %}', {
@@ -244,19 +294,44 @@
                             'X-CSRFToken': '{{ csrf_token }}'
                         }
                     });
-                    const data = await response.json();
 
-                    if (data.status === 'success') {
-                        alert("Success: " + data.message);
-                    } else {
-                        alert("Error: " + data.error);
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop(); // Keep partial line in buffer
+
+                        for (const line of lines) {
+                            if (!line.trim()) continue;
+                            try {
+                                const data = JSON.parse(line);
+                                if (data.type === 'init') {
+                                    progressCounter.textContent = `0 / ${data.total}`;
+                                    window.totalToExport = data.total;
+                                } else if (data.type === 'progress') {
+                                    progressCounter.textContent = `${data.current} / ${window.totalToExport}`;
+                                } else if (data.type === 'success') {
+                                    alert("Success: " + data.message);
+                                } else if (data.type === 'error') {
+                                    alert("Error: " + data.error);
+                                }
+                            } catch (e) {
+                                console.error("Parse error:", e, line);
+                            }
+                        }
                     }
                 } catch (err) {
                     console.error("Export error:", err);
                     alert("Failed to export JSON. Check console for details.");
                 } finally {
                     exportJsonBtn.disabled = false;
-                    exportJsonBtn.textContent = originalText;
+                    loadingOverlay.style.display = 'none';
                 }
             };
         }

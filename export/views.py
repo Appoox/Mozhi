@@ -15,35 +15,48 @@ def project_detail(request, project_id):
     return render(request, 'export/project_detail.html', {'project': project})
 
 
+from django.http import StreamingHttpResponse
+import time
+
 def export_project_json(request, project_id):
     if request.method == 'POST':
         project = get_object_or_404(Project, id=project_id)
         transcripts = Transcript.objects.filter(project=project)
-        
-        data = []
-        for t in transcripts:
-            # Get the filename from the audio_file field
-            filename = os.path.basename(t.audio_file.name)
-            data.append({
-                "audio_filepath": f"audio/{filename}",
-                "text": t.transcript if t.transcript else ""
-            })
-        
-        response_content = json.dumps(data, indent=4)
-        
-        # Save to project folder as details.json
-        try:
-            project_dir = os.path.join(project.folder_path, project.name)
-            if not os.path.exists(project_dir):
-                os.makedirs(project_dir, exist_ok=True)
-                
-            json_file_path = os.path.join(project_dir, 'details.json')
-            with open(json_file_path, 'w') as f:
-                f.write(response_content)
+        total_count = transcripts.count()
+
+        def stream_progress():
+            data = []
+            # Send initial count
+            yield json.dumps({"type": "init", "total": total_count}) + "\n"
             
-            return JsonResponse({'status': 'success', 'message': f'Exported to {json_file_path}'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+            for i, t in enumerate(transcripts, 1):
+                filename = os.path.basename(t.audio_file.name)
+                entry = {
+                    "audio_filepath": f"audio/{filename}",
+                    "text": t.transcript if t.transcript else ""
+                }
+                data.append(entry)
+                
+                # Send progress update
+                yield json.dumps({"type": "progress", "current": i}) + "\n"
+            
+            response_content = json.dumps(data, indent=4)
+            
+            # Save to project folder as details.json
+            try:
+                project_dir = os.path.join(project.folder_path, project.name)
+                if not os.path.exists(project_dir):
+                    os.makedirs(project_dir, exist_ok=True)
+                    
+                json_file_path = os.path.join(project_dir, 'details.json')
+                with open(json_file_path, 'w') as f:
+                    f.write(response_content)
+                
+                yield json.dumps({"type": "success", "message": f"Exported to {json_file_path}"}) + "\n"
+            except Exception as e:
+                yield json.dumps({"type": "error", "error": str(e)}) + "\n"
+
+        return StreamingHttpResponse(stream_progress(), content_type='application/x-ndjson')
 
     return JsonResponse({'status': 'error', 'error': 'Method not allowed'}, status=405)
 
