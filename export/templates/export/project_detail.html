@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ project.name }} - Mozhi</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        h1 {
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .project-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .transcript-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .transcript-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+
+        .audio-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .audio-section audio {
+            width: 100%;
+        }
+
+        .audio-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #444;
+            word-break: break-all;
+        }
+
+        .transcript-section {
+            border-left: 1px solid #eee;
+            padding-left: 30px;
+        }
+
+        .transcript-section h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            color: #1a1a2e;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .transcript-text {
+            line-height: 1.6;
+            color: #444;
+            white-space: pre-wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: #fff;
+            border-radius: 8px;
+            color: #999;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-decoration: none;
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Recording Modal Specific Styles */
+        .recording-box {
+            background-color: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .recording-active {
+            border-color: #ff4d4d;
+            background-color: #fff5f5;
+        }
+
+        .record-indicator {
+            width: 12px;
+            height: 12px;
+            background-color: #ff4d4d;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        textarea.transcript-input {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        .timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        /* Reusing Modal Styles from earlier implementation if not present, 
+           but since I'm editing the same file, I'll ensure they are clean. */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-bar">
+        <a href="{% url 'export:project_list' %}" class="btn btn-secondary">← Back to Projects</a>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'export:export_project_json' project.id %}" class="btn"
+                style="background-color: #4a90e2;">📥 Export JSON</a>
+            <button type="button" class="btn" id="recordBtn" style="background-color: #ff4d4d;">🎙️ Record
+                Audio</button>
+        </div>
+    </div>
+
+    <h1>{{ project.name }}</h1>
+    <div class="project-meta">
+        <span>Sample Rate: {{ project.sample_rate }} Hz</span>
+        <span>Created: {{ project.created_at|date:"d M Y" }}</span>
+        <span>Path: {{ project.folder_path }}</span>
+    </div>
+
+    <div class="transcript-container">
+        {% for transcript in project.transcripts.all %}
+        <div class="transcript-item">
+            <div class="audio-section">
+                <span class="audio-label">{{ transcript.audio_file.name }}</span>
+                <audio controls>
+                    <source src="{{ transcript.audio_file.url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+                <span class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">Uploaded: {{
+                    transcript.created_at|date:"d M Y H:i" }}</span>
+                <button class="delete-transcript-btn" data-id="{{ transcript.id }}">Delete Item</button>
+            </div>
+            <div class="transcript-section">
+                <h3>Transcription</h3>
+                <div class="transcript-text">
+                    {% if transcript.transcript %}
+                    {{ transcript.transcript }}
+                    {% else %}
+                    <em style="color: #999;">Transcription in progress or not available yet...</em>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>No recordings yet. Click "Record Audio" to get started!</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Recording Modal -->
+    <div id="recordingModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; margin-top: 5%;">
+            <div class="modal-header">
+                <h2>Record Audio</h2>
+                <span class="close" id="closeRecording">&times;</span>
+            </div>
+
+            <div class="recording-box" id="recordUI">
+                <div id="recordState">
+                    <p>Click "Start" to begin recording.</p>
+                </div>
+                <div class="timer" id="timer">00:00</div>
+                <div style="display: flex; justify-content: center; gap: 10px;">
+                    <button type="button" class="btn" id="startBtn" style="background-color: #28a745;">Start</button>
+                    <button type="button" class="btn" id="stopBtn"
+                        style="background-color: #dc3545; display: none;">Stop</button>
+                </div>
+            </div>
+
+            <div id="saveUI" style="display: none;">
+                <audio id="audioPlayback" controls style="width: 100%; margin-bottom: 15px;"></audio>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Enter Transcript:</label>
+                <textarea class="transcript-input" id="recordedTranscript"
+                    placeholder="Enter the text for this audio..."></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" id="resetBtn">Discard & Retry</button>
+                    <button type="button" class="btn btn-primary" id="saveRecordBtn">Save to Project</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transcript Deletion Modal -->
+    <div id="deleteTranscriptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Delete Item</h2>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this audio and transcript?</p>
+                <label class="checkbox-group">
+                    <input type="checkbox" id="deleteAudioFileCheckbox">
+                    Delete local folder and files
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background: #e0e0e0; color: #333;"
+                    id="cancelDeleteTranscriptBtn">Cancel</button>
+                <button class="btn" style="background: #c0392b; color: white;" id="confirmDeleteTranscriptBtn">Confirm
+                    Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Transcript Deletion Logic
+        const deleteTranscriptModal = document.getElementById('deleteTranscriptModal');
+        const deleteAudioFileCheckbox = document.getElementById('deleteAudioFileCheckbox');
+        const cancelDeleteTranscriptBtn = document.getElementById('cancelDeleteTranscriptBtn');
+        const confirmDeleteTranscriptBtn = document.getElementById('confirmDeleteTranscriptBtn');
+
+        let transcriptToDeleteId = null;
+
+        document.querySelectorAll('.delete-transcript-btn').forEach(btn => {
+            btn.onclick = () => {
+                transcriptToDeleteId = btn.getAttribute('data-id');
+                deleteAudioFileCheckbox.checked = false;
+                deleteTranscriptModal.style.display = 'block';
+            };
+        });
+
+        cancelDeleteTranscriptBtn.onclick = () => {
+            deleteTranscriptModal.style.display = 'none';
+        };
+
+        confirmDeleteTranscriptBtn.onclick = async () => {
+            if (!transcriptToDeleteId) return;
+
+            confirmDeleteTranscriptBtn.disabled = true;
+            confirmDeleteTranscriptBtn.textContent = 'Deleting...';
+
+            const formData = new FormData();
+            formData.append('delete_files', deleteAudioFileCheckbox.checked);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            try {
+                const response = await fetch(`/transcripts/${transcriptToDeleteId}/delete/`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Failed to delete transcript.');
+            } finally {
+                confirmDeleteTranscriptBtn.disabled = false;
+                confirmDeleteTranscriptBtn.textContent = 'Confirm Delete';
+                deleteTranscriptModal.style.display = 'none';
+            }
+        };
+
+        // Recording Logic
+        const recordingModal = document.getElementById('recordingModal');
+        const recordBtn = document.getElementById('recordBtn');
+        const closeRecording = document.getElementById('closeRecording');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const saveUI = document.getElementById('saveUI');
+        const recordUI = document.getElementById('recordUI');
+        const audioPlayback = document.getElementById('audioPlayback');
+        const timerDisplay = document.getElementById('timer');
+        const recordState = document.getElementById('recordState');
+        const saveRecordBtn = document.getElementById('saveRecordBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const recordedTranscript = document.getElementById('recordedTranscript');
+
+        let audioContext;
+        let processor;
+        let input;
+        let leftChannel = [];
+        let recordingLength = 0;
+        let targetSampleRate = parseInt('{{ project.sample_rate }}');
+        let timerInterval;
+        let startTime;
+
+        recordBtn.onclick = () => {
+            recordingModal.style.display = 'block';
+            resetRecording();
+        };
+
+        closeRecording.onclick = () => {
+            recordingModal.style.display = 'none';
+            stopRecordingInternal();
+        };
+
+        function updateTimer() {
+            const now = Date.now();
+            const diff = now - startTime;
+            const totalSeconds = Math.floor(diff / 1000);
+            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${m}:${s}`;
+        }
+
+        function resetRecording() {
+            leftChannel = [];
+            recordingLength = 0;
+            saveUI.style.display = 'none';
+            recordUI.style.display = 'block';
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            recordState.innerHTML = '<p>Click "Start" to begin recording.</p>';
+            timerDisplay.textContent = '00:00';
+            recordedTranscript.value = '';
+        }
+
+        resetBtn.onclick = resetRecording;
+
+        function stopRecordingInternal() {
+            if (processor) {
+                processor.disconnect();
+                input.disconnect();
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close();
+                }
+                processor = null;
+                input = null;
+            }
+            clearInterval(timerInterval);
+        }
+
+        startBtn.onclick = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Initialize context with hardware default to avoid NotSupportedError
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                input = audioContext.createMediaStreamSource(stream);
+                // 4096 buffer size
+                processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                processor.onaudioprocess = (e) => {
+                    const chunk = e.inputBuffer.getChannelData(0);
+                    leftChannel.push(new Float32Array(chunk));
+                    recordingLength += chunk.length;
+                };
+
+                input.connect(processor);
+                processor.connect(audioContext.destination);
+
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 100);
+
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                recordState.innerHTML = '<span class="record-indicator"></span><strong>Recording...</strong>';
+            } catch (err) {
+                alert("Could not access microphone: " + err);
+                console.error(err);
+            }
+        };
+
+        stopBtn.onclick = () => {
+            const hardwareSampleRate = audioContext.sampleRate;
+            stopRecordingInternal();
+
+            // Flatten the chunks
+            const samples = new Float32Array(recordingLength);
+            let offset = 0;
+            for (let i = 0; i < leftChannel.length; i++) {
+                samples.set(leftChannel[i], offset);
+                offset += leftChannel[i].length;
+            }
+
+            // Resample to target if necessary
+            let finalSamples = samples;
+            if (hardwareSampleRate !== targetSampleRate) {
+                console.log(`Resampling from ${hardwareSampleRate} Hz to ${targetSampleRate} Hz`);
+                finalSamples = resample(samples, hardwareSampleRate, targetSampleRate);
+            }
+
+            // Encode to WAV
+            const wavBuffer = encodeWav(finalSamples, targetSampleRate);
+            const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+
+            console.log("Recording stopped. WAV size:", audioBlob.size, "at", targetSampleRate, "Hz");
+
+            const audioUrl = URL.createObjectURL(audioBlob);
+            audioPlayback.src = audioUrl;
+
+            recordUI.style.display = 'none';
+            saveUI.style.display = 'block';
+        };
+
+        function resample(samples, fromRate, toRate) {
+            const ratio = fromRate / toRate;
+            const newLength = Math.round(samples.length / ratio);
+            const result = new Float32Array(newLength);
+            for (let i = 0; i < newLength; i++) {
+                result[i] = samples[Math.floor(i * ratio)];
+            }
+            return result;
+        }
+
+        function encodeWav(samples, sampleRate) {
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+
+            // RIFF chunk descriptor
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 32 + samples.length * 2, true);
+            writeString(view, 8, 'WAVE');
+
+            // FMT sub-chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true); // Subchunk1Size
+            view.setUint16(20, 1, true); // AudioFormat (PCM)
+            view.setUint16(22, 1, true); // NumChannels
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true); // ByteRate
+            view.setUint16(32, 2, true); // BlockAlign
+            view.setUint16(34, 16, true); // BitsPerSample
+
+            // Data sub-chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, samples.length * 2, true);
+
+            // PCM samples
+            let pcmOffset = 44;
+            for (let i = 0; i < samples.length; i++, pcmOffset += 2) {
+                let s = Math.max(-1, Math.min(1, samples[i]));
+                view.setInt16(pcmOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+
+            return buffer;
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        saveRecordBtn.onclick = async () => {
+            if (!recordedTranscript.value.trim()) {
+                alert("Please enter a transcript.");
+                return;
+            }
+
+            saveRecordBtn.disabled = true;
+            saveRecordBtn.textContent = "Saving...";
+
+            // Send the blob currently in playback
+            const audioBlob = await fetch(audioPlayback.src).then(r => r.blob());
+
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'record.wav');
+            formData.append('transcript', recordedTranscript.value);
+            formData.append('project_id', '{{ project.id }}');
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            try {
+                const response = await fetch('{% url "save_record" %}', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (err) {
+                alert("Failed to save recording.");
+            } finally {
+                saveRecordBtn.disabled = false;
+                saveRecordBtn.textContent = "Save to Project";
+            }
+        };
+
+        window.onclick = (event) => {
+            if (event.target == recordingModal) {
+                recordingModal.style.display = 'none';
+                stopRecordingInternal();
+            } else if (event.target == deleteTranscriptModal) {
+                deleteTranscriptModal.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+
+</html>
