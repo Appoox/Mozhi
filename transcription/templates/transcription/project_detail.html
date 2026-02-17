@@ -583,10 +583,12 @@
                 if (data.status === 'success') {
                     location.reload();
                 } else {
+                    console.error("Server error:", data.error);
                     alert("Error: " + data.error);
                 }
             } catch (err) {
-                alert("Failed to save recording.");
+                console.error("AJAX error:", err);
+                alert("Failed to save recording. Check console for details.");
             } finally {
                 saveRecordBtn.disabled = false;
                 saveRecordBtn.textContent = "Save to Project";
