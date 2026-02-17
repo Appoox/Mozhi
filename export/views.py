@@ -16,36 +16,36 @@ def project_detail(request, project_id):
 
 
 def export_project_json(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    transcripts = Transcript.objects.filter(project=project)
-    
-    data = []
-    for t in transcripts:
-        # Get the filename from the audio_file field
-        filename = os.path.basename(t.audio_file.name)
-        data.append({
-            "audio_filepath": f"audio/{filename}",
-            "text": t.transcript if t.transcript else ""
-        })
-    
-    response_content = json.dumps(data, indent=4)
-    
-    # Save to project folder as details.json
-    try:
-        project_dir = os.path.join(project.folder_path, project.name)
-        if not os.path.exists(project_dir):
-            os.makedirs(project_dir, exist_ok=True)
+    if request.method == 'POST':
+        project = get_object_or_404(Project, id=project_id)
+        transcripts = Transcript.objects.filter(project=project)
+        
+        data = []
+        for t in transcripts:
+            # Get the filename from the audio_file field
+            filename = os.path.basename(t.audio_file.name)
+            data.append({
+                "audio_filepath": f"audio/{filename}",
+                "text": t.transcript if t.transcript else ""
+            })
+        
+        response_content = json.dumps(data, indent=4)
+        
+        # Save to project folder as details.json
+        try:
+            project_dir = os.path.join(project.folder_path, project.name)
+            if not os.path.exists(project_dir):
+                os.makedirs(project_dir, exist_ok=True)
+                
+            json_file_path = os.path.join(project_dir, 'details.json')
+            with open(json_file_path, 'w') as f:
+                f.write(response_content)
             
-        json_file_path = os.path.join(project_dir, 'details.json')
-        with open(json_file_path, 'w') as f:
-            f.write(response_content)
-    except Exception as e:
-        print(f"Error saving details.json to project folder: {e}")
-    
-    # Return as downloadable file to user
-    response = HttpResponse(response_content, content_type='application/json')
-    response['Content-Disposition'] = f'attachment; filename="{project.name}_export.json"'
-    return response
+            return JsonResponse({'status': 'success', 'message': f'Exported to {json_file_path}'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+
+    return JsonResponse({'status': 'error', 'error': 'Method not allowed'}, status=405)
 
 def delete_project(request, project_id):
     """View to delete a project and optionally its physical files."""

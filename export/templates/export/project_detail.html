@@ -164,8 +164,7 @@
 <body>
     <div class="nav-bar">
         <a href="{% url 'export:project_list' %}" class="btn btn-secondary">← Back to Projects</a>
-        <a href="{% url 'export:export_project_json' project.id %}" class="btn" style="background-color: #4a90e2;">📥
-            Export JSON</a>
+        <button type="button" class="btn" id="exportJsonBtn" style="background-color: #4a90e2;">📥 Export JSON</button>
     </div>
 
     <h1>{{ project.name }}</h1>
@@ -230,6 +229,38 @@
     </div>
 
     <script>
+        // Export JSON Logic
+        const exportJsonBtn = document.getElementById('exportJsonBtn');
+        if (exportJsonBtn) {
+            exportJsonBtn.onclick = async () => {
+                exportJsonBtn.disabled = true;
+                const originalText = exportJsonBtn.textContent;
+                exportJsonBtn.textContent = '⌛ Exporting...';
+
+                try {
+                    const response = await fetch('{% url "export:export_project_json" project.id %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        alert("Success: " + data.message);
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } catch (err) {
+                    console.error("Export error:", err);
+                    alert("Failed to export JSON. Check console for details.");
+                } finally {
+                    exportJsonBtn.disabled = false;
+                    exportJsonBtn.textContent = originalText;
+                }
+            };
+        }
+
         // Transcript Deletion Logic
         const deleteTranscriptModal = document.getElementById('deleteTranscriptModal');
         const deleteAudioFileCheckbox = document.getElementById('deleteAudioFileCheckbox');
