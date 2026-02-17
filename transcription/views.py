@@ -29,38 +29,6 @@ def create_project(request):
         form = ProjectForm()
     return render(request, 'transcription/create_project.html', {'form': form})
 
-def upload_audio(request):
-    if request.method == 'POST':
-        form = TranscriptUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            transcript_instance = form.save(commit=False)
-            transcript_instance.user = request.user
-            
-            # Manually handle audio file saving
-            audio_file = request.FILES.get('audio_file')
-            project = transcript_instance.project
-            
-            if audio_file:
-                target_dir = os.path.join(project.folder_path, project.name, 'audio')
-                if not os.path.exists(target_dir):
-                    os.makedirs(target_dir, exist_ok=True)
-                
-                # Use Transcript UUID for filename
-                ext = os.path.splitext(audio_file.name)[1]
-                filename = f"{transcript_instance.id}{ext}"
-                target_path = os.path.join(target_dir, filename)
-                
-                with open(target_path, 'wb+') as destination:
-                    for chunk in audio_file.chunks():
-                        destination.write(chunk)
-                
-                transcript_instance.audio_file = filename
-
-            transcript_instance.save()
-            return redirect('project_detail', project_id=project.id)
-    else:
-        form = TranscriptUploadForm()
-    return render(request, 'transcription/transcription.html', {'form': form})
 from django.core.files.base import ContentFile
 
 def save_record(request):
