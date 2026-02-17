@@ -67,41 +67,48 @@ def save_record(request):
         audio_file = request.FILES.get('audio')
 
         if not all([project_id, audio_file]):
-            return JsonResponse({'error': 'Missing data'}, status=400)
+            return JsonResponse({'status': 'error', 'error': 'Missing data'}, status=400)
 
-        project = get_object_or_404(Project, id=project_id)
-
-        # 1. Save Transcript record to DB (standard Django way)
-        transcript_instance = Transcript.objects.create(
-            project=project,
-            user=request.user,
-            transcript=transcript_text,
-            audio_file=audio_file
-        )
-
-        # 2. ALSO save a copy to the project's specified physical folder
         try:
-            # New structure: <base_path>/<project_name>/audio/
-            target_dir = os.path.join(project.folder_path, project.name, 'audio')
-            if not os.path.exists(target_dir):
-                os.makedirs(target_dir, exist_ok=True)
-            
-            # Use the same name as the one saved in MEDIA_ROOT
-            filename = os.path.basename(transcript_instance.audio_file.name)
-            target_path = os.path.join(target_dir, filename)
-            
-            # Copy the file
-            with transcript_instance.audio_file.open('rb') as f:
-                with open(target_path, 'wb+') as destination:
-                    for chunk in f.chunks():
-                        destination.write(chunk)
+            project = get_object_or_404(Project, id=project_id)
+
+            # Determine user (handle anonymous user for testing/simple setups)
+            user = request.user
+            if user.is_anonymous:
+                from django.contrib.auth.models import User
+                user = User.objects.filter(is_superuser=True).first() or User.objects.first()
+                if not user:
+                    return JsonResponse({'status': 'error', 'error': 'No user available to associate with transcript'}, status=400)
+
+            # 1. Save Transcript record to DB
+            transcript_instance = Transcript.objects.create(
+                project=project,
+                user=user,
+                transcript=transcript_text,
+                audio_file=audio_file
+            )
+
+            # 2. ALSO save a copy to the project's specified physical folder
+            try:
+                target_dir = os.path.join(project.folder_path, project.name, 'audio')
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir, exist_ok=True)
+                
+                filename = os.path.basename(transcript_instance.audio_file.name)
+                target_path = os.path.join(target_dir, filename)
+                
+                with transcript_instance.audio_file.open('rb') as f:
+                    with open(target_path, 'wb+') as destination:
+                        for chunk in f.chunks():
+                            destination.write(chunk)
+            except Exception as e:
+                print(f"Error saving to external folder: {e}")
+
+            return JsonResponse({'status': 'success', 'transcript_id': str(transcript_instance.id)})
         except Exception as e:
-            # We log the error but the record is already saved in DB
-            print(f"Error saving to external folder: {e}")
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
-        return JsonResponse({'status': 'success', 'transcript_id': str(transcript_instance.id)})
-
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    return JsonResponse({'status': 'error', 'error': 'Method not allowed'}, status=405)
 
 import shutil
 
