@@ -21,7 +21,7 @@ class Project(models.Model):
 
 class Transcript(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    audio_file = models.FileField(upload_to='audio_uploads/')
+    audio_file = models.CharField(max_length=255)
     transcript = models.TextField(blank=True, null=True)
     
     # Relationships

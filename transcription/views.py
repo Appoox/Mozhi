@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 import os
+import shutil
 from .forms import TranscriptUploadForm, ProjectForm
 from .models import Transcript, Project
-
 
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
@@ -35,24 +35,27 @@ def upload_audio(request):
         if form.is_valid():
             transcript_instance = form.save(commit=False)
             transcript_instance.user = request.user
-            transcript_instance.save()
+            
+            # Manually handle audio file saving
+            audio_file = request.FILES.get('audio_file')
             project = transcript_instance.project
-
-            try:
+            
+            if audio_file:
                 target_dir = os.path.join(project.folder_path, project.name, 'audio')
                 if not os.path.exists(target_dir):
                     os.makedirs(target_dir, exist_ok=True)
                 
-                filename = os.path.basename(transcript_instance.audio_file.name)
+                # Use original filename or a secure alternative
+                filename = audio_file.name
                 target_path = os.path.join(target_dir, filename)
                 
-                with transcript_instance.audio_file.open('rb') as f:
-                    with open(target_path, 'wb+') as destination:
-                        for chunk in f.chunks():
-                            destination.write(chunk)
-            except Exception as e:
-                print(f"Error saving to external folder: {e}")
-            
+                with open(target_path, 'wb+') as destination:
+                    for chunk in audio_file.chunks():
+                        destination.write(chunk)
+                
+                transcript_instance.audio_file = filename
+
+            transcript_instance.save()
             return redirect('project_detail', project_id=project.id)
     else:
         form = TranscriptUploadForm()
@@ -72,43 +75,53 @@ def save_record(request):
         try:
             project = get_object_or_404(Project, id=project_id)
 
-            # Determine user (handle anonymous user for testing/simple setups)
+            # Determine user
             user = request.user
             if user.is_anonymous:
                 from django.contrib.auth.models import User
                 user = User.objects.filter(is_superuser=True).first() or User.objects.first()
                 if not user:
-                    return JsonResponse({'status': 'error', 'error': 'No user available to associate with transcript'}, status=400)
+                    return JsonResponse({'status': 'error', 'error': 'No user available'}, status=400)
 
-            # 1. Save Transcript record to DB
+            # Manually save audio to project folder
+            target_dir = os.path.join(project.folder_path, project.name, 'audio')
+            if not os.path.exists(target_dir):
+                os.makedirs(target_dir, exist_ok=True)
+            
+            # Generate filename (mozhi_timestamp.wav)
+            import time
+            filename = f"record_{int(time.time())}.wav"
+            target_path = os.path.join(target_dir, filename)
+            
+            with open(target_path, 'wb+') as destination:
+                for chunk in audio_file.chunks():
+                    destination.write(chunk)
+
+            # Save Transcript record to DB
             transcript_instance = Transcript.objects.create(
                 project=project,
                 user=user,
                 transcript=transcript_text,
-                audio_file=audio_file
+                audio_file=filename
             )
-
-            # 2. ALSO save a copy to the project's specified physical folder
-            try:
-                target_dir = os.path.join(project.folder_path, project.name, 'audio')
-                if not os.path.exists(target_dir):
-                    os.makedirs(target_dir, exist_ok=True)
-                
-                filename = os.path.basename(transcript_instance.audio_file.name)
-                target_path = os.path.join(target_dir, filename)
-                
-                with transcript_instance.audio_file.open('rb') as f:
-                    with open(target_path, 'wb+') as destination:
-                        for chunk in f.chunks():
-                            destination.write(chunk)
-            except Exception as e:
-                print(f"Error saving to external folder: {e}")
 
             return JsonResponse({'status': 'success', 'transcript_id': str(transcript_instance.id)})
         except Exception as e:
             return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
     return JsonResponse({'status': 'error', 'error': 'Method not allowed'}, status=405)
+
+
+def serve_audio(request, transcript_id):
+    """Serves audio files from the project-specific folders."""
+    transcript = get_object_or_404(Transcript, id=transcript_id)
+    project = transcript.project
+    file_path = os.path.join(project.folder_path, project.name, 'audio', transcript.audio_file)
+    
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'), content_type='audio/wav')
+    else:
+        return JsonResponse({'error': 'File not found'}, status=404)
 
 import shutil
 
@@ -134,25 +147,18 @@ def delete_project(request, project_id):
 
 
 def delete_transcript(request, transcript_id):
-    """View to delete an individual transcript and optionally its physical file."""
+    """View to delete an individual transcript and its physical file."""
     if request.method == 'POST':
         transcript = get_object_or_404(Transcript, id=transcript_id)
         delete_files = request.POST.get('delete_files') == 'true'
 
         try:
             if delete_files:
-                # 1. Delete from automated project folder
                 project = transcript.project
-                filename = os.path.basename(transcript.audio_file.name)
-                target_path = os.path.join(project.folder_path, project.name, 'audio', filename)
+                target_path = os.path.join(project.folder_path, project.name, 'audio', transcript.audio_file)
                 if os.path.exists(target_path):
                     os.remove(target_path)
-                
-                # 2. Delete from Django media root
-                if transcript.audio_file:
-                    transcript.audio_file.delete(save=False)
             
-            # Delete from DB
             transcript.delete()
             return JsonResponse({'status': 'success'})
         except Exception as e:

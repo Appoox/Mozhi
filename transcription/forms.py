@@ -10,6 +10,8 @@ class ProjectForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
 class TranscriptUploadForm(forms.ModelForm):
+    audio_file = forms.FileField(label="Select Audio File")
+    
     class Meta:
         model = Transcript
         # We only ask for the file and project. 
