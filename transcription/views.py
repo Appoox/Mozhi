@@ -3,7 +3,7 @@ from django.conf import settings
 from django.http import HttpResponse, JsonResponse, FileResponse
 import os
 import shutil
-from .forms import TranscriptUploadForm, ProjectForm
+from .forms import ProjectForm
 from .models import Transcript, Project
 
 def project_list(request):
