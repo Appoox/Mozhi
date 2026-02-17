@@ -8,7 +8,8 @@ from .models import Transcript, Project
 
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
-    return render(request, 'transcription/project_list.html', {'projects': projects})
+    form = ProjectForm()
+    return render(request, 'transcription/project_list.html', {'projects': projects, 'form': form})
 
 
 def project_detail(request, project_id):

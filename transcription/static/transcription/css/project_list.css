@@ -119,3 +119,29 @@ h1 {
     color: #555;
     cursor: pointer;
 }
+
+/* Modal Form Elements */
+.modal-body label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.modal-body input[type="text"],
+.modal-body input[type="number"],
+.modal-body select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.modal-body .helptext {
+    display: block;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: -12px;
+    margin-bottom: 16px;
+}
