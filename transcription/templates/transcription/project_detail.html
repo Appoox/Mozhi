@@ -21,7 +21,7 @@
     </div>
 
     <div class="transcript-container">
-        {% for transcript in project.transcripts.all %}
+        {% for transcript in page_obj %}
         <div class="transcript-item">
             <div class="audio-section">
                 <span class="audio-label">{{ transcript.audio_file }}</span>
@@ -52,6 +52,25 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="page-btn">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="page-btn">Previous</a>
+        {% endif %}
+
+        <span class="current-page">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="page-btn">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-btn">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <!-- Recording Modal -->
     <div id="recordingModal" class="modal">

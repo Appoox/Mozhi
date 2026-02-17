@@ -210,3 +210,35 @@ textarea.transcript-input {
 .close:hover {
     color: #000;
 }
+
+/* Pagination Styles */
+.pagination {
+    margin: 30px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-btn {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #1a1a2e;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.page-btn:hover {
+    background: #1a1a2e;
+    color: #fff;
+    border-color: #1a1a2e;
+}
+
+.current-page {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}

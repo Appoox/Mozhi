@@ -12,9 +12,20 @@ def project_list(request):
     return render(request, 'transcription/project_list.html', {'projects': projects, 'form': form})
 
 
+from django.core.paginator import Paginator
+
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    return render(request, 'transcription/project_detail.html', {'project': project})
+    transcripts_list = project.transcripts.all().order_by('-created_at')
+    
+    paginator = Paginator(transcripts_list, 10) # Show 10 transcripts per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'transcription/project_detail.html', {
+        'project': project,
+        'page_obj': page_obj
+    })
 
 
 def create_project(request):
