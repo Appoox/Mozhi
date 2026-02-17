@@ -30,7 +30,8 @@ def export_project_json(request, project_id):
             yield json.dumps({"type": "init", "total": total_count}) + "\n"
             
             for i, t in enumerate(transcripts, 1):
-                filename = os.path.basename(t.audio_file.name)
+                # audio_file is now a CharField storing the filename
+                filename = os.path.basename(t.audio_file)
                 entry = {
                     "audio_filepath": f"audio/{filename}",
                     "text": t.transcript if t.transcript else ""
@@ -89,16 +90,12 @@ def delete_transcript(request, transcript_id):
 
         try:
             if delete_files:
-                # 1. Delete from automated project folder
                 project = transcript.project
-                filename = os.path.basename(transcript.audio_file.name)
+                # audio_file is a CharField
+                filename = os.path.basename(transcript.audio_file)
                 target_path = os.path.join(project.folder_path, project.name, 'audio', filename)
                 if os.path.exists(target_path):
                     os.remove(target_path)
-                
-                # 2. Delete from Django media root
-                if transcript.audio_file:
-                    transcript.audio_file.delete(save=False)
             
             # Delete from DB
             transcript.delete()

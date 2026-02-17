@@ -216,16 +216,16 @@
     <div class="project-meta">
         <span>Sample Rate: {{ project.sample_rate }} Hz</span>
         <span>Created: {{ project.created_at|date:"d M Y" }}</span>
-        <span>Path: {{ project.folder_path }}</span>
+        <span>Path: {{ project.folder_path }}/{{ project.name }}</span>
     </div>
 
     <div class="transcript-container">
         {% for transcript in project.transcripts.all %}
         <div class="transcript-item">
             <div class="audio-section">
-                <span class="audio-label">{{ transcript.audio_file.name }}</span>
+                <span class="audio-label">{{ transcript.audio_file }}</span>
                 <audio controls>
-                    <source src="{{ transcript.audio_file.url }}" type="audio/wav">
+                    <source src="{% url 'serve_audio' transcript.id %}" type="audio/wav">
                     Your browser does not support the audio element.
                 </audio>
                 <span class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">Uploaded: {{
