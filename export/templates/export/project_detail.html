@@ -261,7 +261,7 @@
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
             try {
-                const response = await fetch(`/transcripts/${transcriptToDeleteId}/delete/`, {
+                const response = await fetch(`/export/transcripts/${transcriptToDeleteId}/delete/`, {
                     method: 'POST',
                     body: formData
                 });

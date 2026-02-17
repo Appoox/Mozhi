@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Projects - Mozhi</title>
+    <title>EXPORT</title>
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
@@ -53,22 +53,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            text-decoration: none;
-            background: #1a1a2e;
-            color: #fff;
-        }
-
-        .btn:hover {
-            opacity: 0.85;
         }
 
         .btn-danger {
@@ -131,7 +115,6 @@
 <body>
     <div class="page-header">
         <h1>Projects</h1>
-        <a href="{% url 'create_project' %}" class="btn">+ New Project</a>
     </div>
 
     {% if projects %}
@@ -227,7 +210,7 @@
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
             try {
-                const response = await fetch(`/projects/${projectToDelete.id}/delete/`, {
+                const response = await fetch(`/export/projects/${projectToDelete.id}/delete/`, {
                     method: 'POST',
                     body: formData
                 });
