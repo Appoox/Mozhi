@@ -23,6 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 #Custom Variable to Save files into 
 SAVE_DIR = env.str("SAVE_DIR", default=os.path.join(BASE_DIR, 'Projects'))
 
+#Custom Variable to set pagination
+PAGE_NUM = env.str("PAGE_NUM", default = 10)
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 

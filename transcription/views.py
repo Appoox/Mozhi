@@ -1,3 +1,4 @@
+from Mozhi.settings import PAGE_NUM
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse, FileResponse
@@ -12,7 +13,7 @@ def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
     form = ProjectForm()
     
-    paginator = Paginator(projects, 10) # Show 10 projects per page
+    paginator = Paginator(projects, PAGE_NUM) # Show 10 projects per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -28,7 +29,7 @@ def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     transcripts_list = project.transcripts.all().order_by('-created_at')
     
-    paginator = Paginator(transcripts_list, 10) # Show 10 transcripts per page
+    paginator = Paginator(transcripts_list, PAGE_NUM) # Show 10 transcripts per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
