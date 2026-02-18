@@ -33,8 +33,8 @@ def create_project(request):
         form = ProjectForm(request.POST)
         if form.is_valid():
             project = form.save(commit=False)
-            # Automatically set path to Projects folder in parent of BASE_DIR
-            project.folder_path = os.path.join(settings.BASE_DIR.parent, 'Projects')
+            # Automatically set path to Save project into SAVE_DIR
+            project.folder_path = settings.SAVE_DIR
             project.save()
             return redirect('project_list')
     else:
