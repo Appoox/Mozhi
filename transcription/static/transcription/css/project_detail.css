@@ -242,3 +242,11 @@ textarea.transcript-input {
     color: #666;
     font-weight: 500;
 }
+
+.delete-transcript-btn {
+    background: #c0392b;
+    color: #fff;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+
+}
