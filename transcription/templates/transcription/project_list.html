@@ -15,7 +15,7 @@
 
     {% if projects %}
     <ul class="project-list">
-        {% for project in projects %}
+        {% for project in page_obj %}
         <li>
             <a href="{% url 'project_detail' project.id %}" class="project-link"
                 style="text-decoration: none; color: inherit;">
@@ -59,6 +59,24 @@
             </div>
         </div>
     </div>
+    <!-- Pagination  -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="page-btn">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="page-btn">Previous</a>
+        {% endif %}
+
+        <span class="current-page">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="page-btn">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-btn">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <!-- Create Project Modal -->
     <div id="createModal" class="modal">

@@ -4,13 +4,19 @@ import shutil
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from transcription.models import Project, Transcript
+from django.core.paginator import Paginator
 
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
-    return render(request, 'export/project_list.html', {'projects': projects})
-
-
-from django.core.paginator import Paginator
+        
+    paginator = Paginator(projects, 10) # Show 10 projects per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'export/project_list.html', {
+        'projects': projects, 
+        'page_obj': page_obj,
+        })
 
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)

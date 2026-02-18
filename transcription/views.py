@@ -5,14 +5,24 @@ import os
 import shutil
 from .forms import ProjectForm
 from .models import Transcript, Project
+from django.core.paginator import Paginator
+
 
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
     form = ProjectForm()
-    return render(request, 'transcription/project_list.html', {'projects': projects, 'form': form})
+    
+    paginator = Paginator(projects, 10) # Show 10 projects per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'transcription/project_list.html', {
+        'projects': projects, 
+        'form': form,
+        'page_obj': page_obj,
+        })
 
 
-from django.core.paginator import Paginator
 
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
@@ -24,7 +34,7 @@ def project_detail(request, project_id):
     
     return render(request, 'transcription/project_detail.html', {
         'project': project,
-        'page_obj': page_obj
+        'page_obj': page_obj,
     })
 
 
