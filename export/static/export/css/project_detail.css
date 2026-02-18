@@ -107,8 +107,6 @@ h1 {
 }
 
 
-/* Reusing Modal Styles from earlier implementation if not present, 
-   but since I'm editing the same file, I'll ensure they are clean. */
 .modal {
     display: none;
     position: fixed;
