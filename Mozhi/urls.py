@@ -15,7 +15,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from transcription import views
@@ -30,6 +31,7 @@ urlpatterns = [
     path('api/save-record/', views.save_record, name='save_record'),
     path('audio/<uuid:transcript_id>/', views.serve_audio, name='serve_audio'),
     path('export/', include('export.urls')),
+    re_path(r'^.*$', RedirectView.as_view(pattern_name='project_list', permanent=False)),
 ]
 
 
