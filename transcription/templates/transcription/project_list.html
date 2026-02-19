@@ -10,12 +10,12 @@
 <body>
     <div class="page-header">
         <h1>Projects</h1>
-        <a href="{% url 'create_project' %}" class="btn">+ New Project</a>
+        <button id="openCreateModalBtn" class="btn">+ New Project</button>
     </div>
 
     {% if projects %}
     <ul class="project-list">
-        {% for project in projects %}
+        {% for project in page_obj %}
         <li>
             <a href="{% url 'project_detail' project.id %}" class="project-link"
                 style="text-decoration: none; color: inherit;">
@@ -57,6 +57,44 @@
                 <button class="btn" style="background: #e0e0e0; color: #333;" id="cancelDeleteBtn">Cancel</button>
                 <button class="btn btn-danger" id="confirmDeleteBtn">Confirm Delete</button>
             </div>
+        </div>
+    </div>
+    <!-- Pagination  -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="page-btn">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="page-btn">Previous</a>
+        {% endif %}
+
+        <span class="current-page">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="page-btn">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-btn">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Create Project Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Project</h2>
+            </div>
+            <form action="{% url 'create_project' %}" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" style="background: #e0e0e0; color: #333;"
+                        id="cancelCreateBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </div>
+            </form>
         </div>
     </div>
 

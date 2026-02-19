@@ -1,4 +1,8 @@
 const deleteModal = document.getElementById('deleteModal');
+const createModal = document.getElementById('createModal');
+const openCreateModalBtn = document.getElementById('openCreateModalBtn');
+const cancelCreateBtn = document.getElementById('cancelCreateBtn');
+
 const projectNameDisplay = document.getElementById('projectNameDisplay');
 const deleteFilesCheckbox = document.getElementById('deleteFilesCheckbox');
 const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
@@ -6,6 +10,20 @@ const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
 let projectToDelete = null;
 
+// Create Modal Logic
+if (openCreateModalBtn) {
+    openCreateModalBtn.onclick = () => {
+        createModal.style.display = 'block';
+    };
+}
+
+if (cancelCreateBtn) {
+    cancelCreateBtn.onclick = () => {
+        createModal.style.display = 'none';
+    };
+}
+
+// Delete Modal Logic
 document.querySelectorAll('.delete-project-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -29,6 +47,8 @@ cancelDeleteBtn.onclick = () => {
 window.onclick = (event) => {
     if (event.target == deleteModal) {
         deleteModal.style.display = 'none';
+    } else if (event.target == createModal) {
+        createModal.style.display = 'none';
     }
 };
 

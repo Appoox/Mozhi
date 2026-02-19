@@ -1,3 +1,4 @@
+from Mozhi.settings import PAGE_NUM
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse, FileResponse
@@ -5,15 +6,37 @@ import os
 import shutil
 from .forms import ProjectForm
 from .models import Transcript, Project
+from django.core.paginator import Paginator
+
 
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
-    return render(request, 'transcription/project_list.html', {'projects': projects})
+    form = ProjectForm()
+    
+    paginator = Paginator(projects, PAGE_NUM) # Show 10 projects per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'transcription/project_list.html', {
+        'projects': projects, 
+        'form': form,
+        'page_obj': page_obj,
+        })
+
 
 
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    return render(request, 'transcription/project_detail.html', {'project': project})
+    transcripts_list = project.transcripts.all().order_by('-created_at')
+    
+    paginator = Paginator(transcripts_list, PAGE_NUM) # Show 10 transcripts per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'transcription/project_detail.html', {
+        'project': project,
+        'page_obj': page_obj,
+    })
 
 
 def create_project(request):
@@ -21,8 +44,8 @@ def create_project(request):
         form = ProjectForm(request.POST)
         if form.is_valid():
             project = form.save(commit=False)
-            # Automatically set path to Projects folder in parent of BASE_DIR
-            project.folder_path = os.path.join(settings.BASE_DIR.parent, 'Projects')
+            # Automatically set path to Save project into SAVE_DIR
+            project.folder_path = settings.SAVE_DIR
             project.save()
             return redirect('project_list')
     else:

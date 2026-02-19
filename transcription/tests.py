@@ -136,3 +136,9 @@ class TranscriptionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'audio/wav')
         self.assertEqual(b"".join(response.streaming_content), b"test audio data")
+
+    def test_wrong_url_redirects_to_project_list(self):
+        """Test that a non-existent URL redirects to the project list."""
+        response = self.client.get('/this-is-a-wrong-url/')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('project_list'))

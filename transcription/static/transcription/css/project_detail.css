@@ -1,10 +1,21 @@
 body {
     font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 40px;
+    background: #f5f5f5;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.transcript-container {
     max-width: 1000px;
     margin: 40px auto;
     padding: 0 20px;
-    background: #f5f5f5;
     color: #333;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 h1 {
@@ -20,26 +31,30 @@ h1 {
     gap: 20px;
 }
 
-.transcript-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
 .transcript-item {
     background: #fff;
+    /* Consistent with project cards */
     border-radius: 8px;
+    /* Standard rounding */
     padding: 24px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    /* Subtle depth */
+
     display: grid;
-    grid-template-columns: 300px 1fr;
+    /* Changed from minmax to equal fractions */
+    grid-template-columns: 1fr 1fr;
     gap: 30px;
+    width: 100%;
+    /* Spans the full available width */
+    box-sizing: border-box;
 }
 
 .audio-section {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    /* Ensures content doesn't overflow the 50% width */
+    width: 100%;
 }
 
 .audio-section audio {
@@ -106,66 +121,6 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* Recording Modal Specific Styles */
-.recording-box {
-    background-color: #f8f9fa;
-    border: 2px dashed #ddd;
-    border-radius: 8px;
-    padding: 30px;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.recording-active {
-    border-color: #ff4d4d;
-    background-color: #fff5f5;
-}
-
-.record-indicator {
-    width: 12px;
-    height: 12px;
-    background-color: #ff4d4d;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 8px;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-
-    50% {
-        transform: scale(1.5);
-        opacity: 0.5;
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-textarea.transcript-input {
-    width: 100%;
-    height: 120px;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: inherit;
-    resize: vertical;
-    margin-bottom: 15px;
-    box-sizing: border-box;
-}
-
-.timer {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-    margin: 10px 0;
-}
 
 .modal {
     display: none;
@@ -209,4 +164,82 @@ textarea.transcript-input {
 
 .close:hover {
     color: #000;
+}
+
+/* Loading Overlay Styles */
+#loadingOverlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-family: inherit;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+/* Pagination Styles */
+.pagination {
+    margin: 30px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-btn {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #1a1a2e;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.page-btn:hover {
+    background: #1a1a2e;
+    color: #fff;
+    border-color: #1a1a2e;
+}
+
+.current-page {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.delete-transcript-btn {
+    background: #c0392b;
+    color: #fff;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+
 }

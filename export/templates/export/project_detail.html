@@ -10,7 +10,7 @@
 <body>
     <div class="nav-bar">
         <a href="{% url 'export:project_list' %}" class="btn btn-secondary">← Back to Projects</a>
-        <button type="button" class="btn" id="exportJsonBtn" style="background-color: #4a90e2;">📥 Export JSON</button>
+        <button type="button" class="btn" id="exportJsonBtn" style="background-color: #4a90e2;">Export JSON</button>
     </div>
 
     <!-- Loading Overlay -->
@@ -28,7 +28,7 @@
     </div>
 
     <div class="transcript-container">
-        {% for transcript in project.transcripts.all %}
+        {% for transcript in page_obj %}
         <div class="transcript-item">
             <div class="audio-section">
                 <span class="audio-label">{{ transcript.audio_file }}</span>
@@ -36,9 +36,10 @@
                     <source src="{% url 'serve_audio' transcript.id %}" type="audio/wav">
                     Your browser does not support the audio element.
                 </audio>
-                <span class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">Uploaded: {{
-                    transcript.created_at|date:"d M Y H:i" }}</span>
-                <button class="delete-transcript-btn" data-id="{{ transcript.id }}">Delete Item</button>
+                <div class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">
+                    <span>Uploaded: {{ transcript.created_at|date:"d M Y H:i" }}</span>
+                </div>
+                <button class="delete-transcript-btn" data-id="{{ transcript.id }}">Delete</button>
             </div>
             <div class="transcript-section">
                 <h3>Transcription</h3>
@@ -57,6 +58,25 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="page-btn">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="page-btn">Previous</a>
+        {% endif %}
+
+        <span class="current-page">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="page-btn">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-btn">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
 
 
     <!-- Transcript Deletion Modal -->

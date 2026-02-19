@@ -1,18 +1,36 @@
+from Mozhi.settings import PAGE_NUM
 import json
 import os
 import shutil
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from transcription.models import Project, Transcript
+from django.core.paginator import Paginator
 
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
-    return render(request, 'export/project_list.html', {'projects': projects})
 
+    paginator = Paginator(projects, PAGE_NUM) # Show 10 projects per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'export/project_list.html', {
+        'projects': projects, 
+        'page_obj': page_obj,
+        })
 
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    return render(request, 'export/project_detail.html', {'project': project})
+    transcripts_list = project.transcripts.all().order_by('-created_at')
+    
+    paginator = Paginator(transcripts_list, PAGE_NUM) # Show 10 transcripts per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'export/project_detail.html', {
+        'project': project,
+        'page_obj': page_obj
+    })
 
 
 from django.http import StreamingHttpResponse
