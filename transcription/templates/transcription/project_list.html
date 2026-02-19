@@ -7,10 +7,22 @@
     <link rel="stylesheet" href="{% static 'transcription/css/project_list.css' %}">
 </head>
 
-<body>
+<body>     
+        {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="page-header">
         <h1>Projects</h1>
-        <button id="openCreateModalBtn" class="btn">+ New Project</button>
+        <div>
+            <button id="openImportModalBtn" class="btn" style="margin-right: 10px; background: #27ae60;">+  Import Project</button>
+            <button id="openCreateModalBtn" class="btn">+ New Project</button>
+        </div>
+    </div>
     </div>
 
     {% if projects %}
@@ -96,6 +108,25 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    {# Import Project Modal #}
+    <div id="importModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Import Project</h2>
+        </div>
+        <form action="{% url 'import_project' %}" method="post">
+            <div class="modal-body">
+                {% csrf_token %}
+                {{ import_form.as_p }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" style="background: #e0e0e0; color: #333;" id="cancelImportBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background: #27ae60;">Import Project</button>
+            </div>
+        </form>
+    </div>
     </div>
 
     <script>
