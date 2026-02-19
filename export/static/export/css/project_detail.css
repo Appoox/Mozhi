@@ -241,42 +241,37 @@ h1 {
     color: #000;
 }
 
-/* ── Loading Overlay ── */
-#loadingOverlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
+/* ── Progress Modal ── */
+.progress-track {
     width: 100%;
+    background: #e0e0e0;
+    border-radius: 999px;
+    height: 12px;
+    overflow: hidden;
+    margin: 12px 0 6px;
+}
+
+.progress-bar {
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 9999;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-family: inherit;
+    width: 0%;
+    background: #2980b9;
+    border-radius: 999px;
+    transition: width 0.3s ease;
 }
 
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-    margin-bottom: 20px;
+.progress-bar.success {
+    background: #27ae60;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+.progress-bar.error {
+    background: #c0392b;
 }
 
-.loading-text {
-    font-size: 1.2rem;
-    font-weight: 500;
+.progress-count {
+    font-size: 0.85rem;
+    color: #777;
+    text-align: right;
+    margin: 0;
 }
 
 /* ── Pagination ── */

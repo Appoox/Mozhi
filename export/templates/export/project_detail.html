@@ -13,11 +13,23 @@
         <button type="button" class="btn" id="exportJsonBtn" style="background-color: #4a90e2;">Export JSON</button>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loadingText">Exporting... Please wait</div>
-        <div id="progressCounter" style="margin-top: 10px; font-size: 1rem; opacity: 0.9;"></div>
+    <!-- Export Progress Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Export JSON</h2>
+            </div>
+            <div class="modal-body">
+                <p id="exportStatusText">Preparing export...</p>
+                <div class="progress-track">
+                    <div class="progress-bar" id="exportProgressBar"></div>
+                </div>
+                <p class="progress-count" id="exportProgressCount"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="closeExportModalBtn" style="display:none; background:#e0e0e0; color:#333;">Close</button>
+            </div>
+        </div>
     </div>
 
     <h1>{{ project.name }}</h1>

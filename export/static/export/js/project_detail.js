@@ -1,27 +1,34 @@
 // Export JSON Logic
 const exportJsonBtn = document.getElementById('exportJsonBtn');
-const loadingOverlay = document.getElementById('loadingOverlay');
-const loadingText = document.getElementById('loadingText');
-const progressCounter = document.getElementById('progressCounter');
+const exportModal = document.getElementById('exportModal');
+const exportStatusText = document.getElementById('exportStatusText');
+const exportProgressBar = document.getElementById('exportProgressBar');
+const exportProgressCount = document.getElementById('exportProgressCount');
+const closeExportModalBtn = document.getElementById('closeExportModalBtn');
 
 if (exportJsonBtn) {
     exportJsonBtn.onclick = async () => {
+        // Reset and open modal
+        exportStatusText.textContent = 'Preparing export...';
+        exportProgressBar.style.width = '0%';
+        exportProgressBar.className = 'progress-bar';
+        exportProgressCount.textContent = '';
+        closeExportModalBtn.style.display = 'none';
+        exportModal.style.display = 'block';
         exportJsonBtn.disabled = true;
-        loadingOverlay.style.display = 'flex';
-        loadingText.textContent = 'Exporting... Please wait';
-        progressCounter.textContent = '';
 
         try {
             const response = await fetch(window.exportJsonUrl, {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': window.csrfToken
-                }
+                headers: { 'X-CSRFToken': window.csrfToken }
             });
+
+            if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let total = 0;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -29,36 +36,47 @@ if (exportJsonBtn) {
 
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n');
-                buffer = lines.pop(); // Keep partial line in buffer
+                buffer = lines.pop();
 
                 for (const line of lines) {
                     if (!line.trim()) continue;
                     try {
-                        const data = JSON.parse(line);
-                        if (data.type === 'init') {
-                            progressCounter.textContent = `0 / ${data.total}`;
-                            window.totalToExport = data.total;
-                        } else if (data.type === 'progress') {
-                            progressCounter.textContent = `${data.current} / ${window.totalToExport}`;
-                        } else if (data.type === 'success') {
-                            alert("Success: " + data.message);
-                        } else if (data.type === 'error') {
-                            alert("Error: " + data.error);
+                        const msg = JSON.parse(line);
+                        if (msg.type === 'init') {
+                            total = msg.total;
+                            exportStatusText.textContent = `Exporting ${total} transcripts...`;
+                            exportProgressCount.textContent = `0 / ${total}`;
+                        } else if (msg.type === 'progress') {
+                            const pct = total > 0 ? (msg.current / total) * 100 : 0;
+                            exportProgressBar.style.width = `${pct}%`;
+                            exportProgressCount.textContent = `${msg.current} / ${total}`;
+                        } else if (msg.type === 'success') {
+                            exportProgressBar.style.width = '100%';
+                            exportProgressBar.classList.add('success');
+                            exportStatusText.textContent = `✓ ${msg.message}`;
+                            exportProgressCount.textContent = `${total} / ${total}`;
+                        } else if (msg.type === 'error') {
+                            exportProgressBar.classList.add('error');
+                            exportStatusText.textContent = `✗ Error: ${msg.error}`;
                         }
                     } catch (e) {
-                        console.error("Parse error:", e, line);
+                        console.error('Parse error:', e, line);
                     }
                 }
             }
         } catch (err) {
-            console.error("Export error:", err);
-            alert("Failed to export JSON. Check console for details.");
+            exportProgressBar.classList.add('error');
+            exportStatusText.textContent = `✗ Failed: ${err.message}`;
         } finally {
             exportJsonBtn.disabled = false;
-            loadingOverlay.style.display = 'none';
+            closeExportModalBtn.style.display = 'inline-block';
         }
     };
 }
+
+closeExportModalBtn.onclick = () => {
+    exportModal.style.display = 'none';
+};
 
 
 // ── Transcript Deletion Logic ──────────────────────────────────────────────
@@ -333,6 +351,8 @@ window.onclick = (event) => {
         stopRecordingInternal();
     } else if (event.target == deleteTranscriptModal) {
         deleteTranscriptModal.style.display = 'none';
+    } else if (event.target == exportModal) {
+        exportModal.style.display = 'none';
     }
 };
 
