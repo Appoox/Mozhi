@@ -33,31 +33,26 @@ h1 {
 
 .transcript-item {
     background: #fff;
-    /* Consistent with project cards */
     border-radius: 8px;
-    /* Standard rounding */
     padding: 24px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    /* Subtle depth */
-
     display: grid;
-    /* Changed from minmax to equal fractions */
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     width: 100%;
-    /* Spans the full available width */
     box-sizing: border-box;
+}
+
+/* min-width: 0 prevents grid children from overflowing their column */
+.audio-section,
+.transcript-section {
+    min-width: 0;
 }
 
 .audio-section {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    /* Ensures content doesn't overflow the 50% width */
-    width: 100%;
-}
-
-.audio-section audio {
     width: 100%;
 }
 
@@ -68,6 +63,83 @@ h1 {
     word-break: break-all;
 }
 
+/* ── Waveform Player ── */
+.waveform-player {
+    background: #f8f9fa;
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.waveform-wrapper {
+    width: 100%;
+    cursor: pointer;
+    /* WaveSurfer renders its canvas here */
+}
+
+/* Override WaveSurfer's internal scroll container */
+.waveform-wrapper > div {
+    overflow: hidden !important;
+}
+
+.waveform-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.play-pause-btn {
+    flex-shrink: 0;
+    position: relative;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    padding: 0;
+}
+
+.play-pause-btn:hover {
+    background: #139b06;
+}
+
+/* Absolutely centre both icons — toggling display won't shift layout */
+.play-pause-btn svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+/* Play triangle is optically left-heavy — nudge 1px right */
+.play-pause-btn .icon-play {
+    transform: translate(calc(-50% + 1px), -50%);
+}
+
+.time-display {
+    font-size: 0.78rem;
+    color: #666;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.time-sep {
+    color: #bbb;
+}
+
+/* ── Transcript Section ── */
 .transcript-section {
     border-left: 1px solid #eee;
     padding-left: 30px;
@@ -86,6 +158,8 @@ h1 {
     line-height: 1.6;
     color: #444;
     white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .empty-state {
@@ -96,6 +170,7 @@ h1 {
     color: #999;
 }
 
+/* ── Buttons ── */
 .btn {
     display: inline-block;
     padding: 10px 20px;
@@ -121,7 +196,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-
+/* ── Modals ── */
 .modal {
     display: none;
     position: fixed;
@@ -166,7 +241,7 @@ h1 {
     color: #000;
 }
 
-/* Loading Overlay Styles */
+/* ── Loading Overlay ── */
 #loadingOverlay {
     display: none;
     position: fixed;
@@ -204,7 +279,7 @@ h1 {
     font-weight: 500;
 }
 
-/* Pagination Styles */
+/* ── Pagination ── */
 .pagination {
     margin: 30px 0;
     display: flex;
@@ -241,5 +316,8 @@ h1 {
     color: #fff;
     padding: 6px 12px;
     font-size: 0.8rem;
-
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    align-self: flex-start;
 }
