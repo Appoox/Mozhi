@@ -8,9 +8,9 @@ body {
 }
 
 .transcript-container {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 0 20px;
+    max-width: 1400px;
+    margin: 32px auto;
+    padding: 0;
     color: #333;
     box-sizing: border-box;
     display: flex;

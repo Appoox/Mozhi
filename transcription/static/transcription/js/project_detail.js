@@ -53,28 +53,28 @@ confirmDeleteTranscriptBtn.onclick = async () => {
 
 // ── Recording Logic ────────────────────────────────────────────────────────
 
-const recordingModal = document.getElementById('recordingModal');
-const recordBtn = document.getElementById('recordBtn');
-const closeRecording = document.getElementById('closeRecording');
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const saveUI = document.getElementById('saveUI');
-const recordUI = document.getElementById('recordUI');
-const audioPlayback = document.getElementById('audioPlayback');
-const timerDisplay = document.getElementById('timer');
-const recordState = document.getElementById('recordState');
-const saveRecordBtn = document.getElementById('saveRecordBtn');
-const resetBtn = document.getElementById('resetBtn');
+const recordingModal   = document.getElementById('recordingModal');
+const recordBtn        = document.getElementById('recordBtn');
+const closeRecording   = document.getElementById('closeRecording');
+const saveUI           = document.getElementById('saveUI');
+const recordUI         = document.getElementById('recordUI');
+const audioPlayback    = document.getElementById('audioPlayback');
+const timerDisplay     = document.getElementById('timer');
+const saveRecordBtn    = document.getElementById('saveRecordBtn');
+const resetBtn         = document.getElementById('resetBtn');
 const recordedTranscript = document.getElementById('recordedTranscript');
+const recordCircleBtn  = document.getElementById('recordCircleBtn');
+const recordRing       = document.getElementById('recordRing');
+const recordBars       = document.getElementById('recordBars');
+const recordHint       = document.getElementById('recordHint');
 
-let audioContext;
-let processor;
-let input;
-let leftChannel = [];
-let recordingLength = 0;
+let audioContext, processor, input;
+let leftChannel      = [];
+let recordingLength  = 0;
 let targetSampleRate = window.sampleRate;
 let timerInterval;
 let startTime;
+let isRecording      = false;
 
 recordBtn.onclick = () => {
     recordingModal.style.display = 'block';
@@ -87,24 +87,26 @@ closeRecording.onclick = () => {
 };
 
 function updateTimer() {
-    const now = Date.now();
-    const diff = now - startTime;
-    const totalSeconds = Math.floor(diff / 1000);
-    const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-    const s = (totalSeconds % 60).toString().padStart(2, '0');
-    timerDisplay.textContent = `${m}:${s}`;
+    const elapsed      = Date.now() - startTime;
+    const totalSeconds = Math.floor(elapsed / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    timerDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`;
 }
 
 function resetRecording() {
-    leftChannel = [];
+    leftChannel     = [];
     recordingLength = 0;
-    saveUI.style.display = 'none';
-    recordUI.style.display = 'block';
-    startBtn.style.display = 'block';
-    stopBtn.style.display = 'none';
-    recordState.innerHTML = '<p>Click "Start" to begin recording.</p>';
-    timerDisplay.textContent = '00:00';
+    isRecording     = false;
+    saveUI.style.display  = 'none';
+    recordUI.style.display = 'flex';
+    recordCircleBtn.classList.remove('recording');
+    recordRing.classList.remove('active');
+    recordBars.classList.remove('visible');
+    timerDisplay.textContent = '0:00';
+    recordHint.textContent   = 'Tap to start recording';
     recordedTranscript.value = '';
+    stopRecordingInternal();
 }
 
 resetBtn.onclick = resetRecording;
@@ -113,71 +115,69 @@ function stopRecordingInternal() {
     if (processor) {
         processor.disconnect();
         input.disconnect();
-        if (audioContext && audioContext.state !== 'closed') {
-            audioContext.close();
-        }
+        if (audioContext && audioContext.state !== 'closed') audioContext.close();
         processor = null;
-        input = null;
+        input     = null;
     }
     clearInterval(timerInterval);
 }
 
-startBtn.onclick = async () => {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+// Single toggle button — start on first click, stop on second
+recordCircleBtn.onclick = async () => {
+    if (!isRecording) {
+        // ── START ──
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            input        = audioContext.createMediaStreamSource(stream);
+            processor    = audioContext.createScriptProcessor(4096, 1, 1);
 
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        input = audioContext.createMediaStreamSource(stream);
-        processor = audioContext.createScriptProcessor(4096, 1, 1);
+            processor.onaudioprocess = (e) => {
+                const chunk = e.inputBuffer.getChannelData(0);
+                leftChannel.push(new Float32Array(chunk));
+                recordingLength += chunk.length;
+            };
 
-        processor.onaudioprocess = (e) => {
-            const chunk = e.inputBuffer.getChannelData(0);
-            leftChannel.push(new Float32Array(chunk));
-            recordingLength += chunk.length;
-        };
+            input.connect(processor);
+            processor.connect(audioContext.destination);
 
-        input.connect(processor);
-        processor.connect(audioContext.destination);
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 100);
+            isRecording = true;
 
-        startTime = Date.now();
-        timerInterval = setInterval(updateTimer, 100);
+            recordCircleBtn.classList.add('recording');
+            recordRing.classList.add('active');
+            recordBars.classList.add('visible');
+            recordHint.textContent = 'Tap to stop';
+        } catch (err) {
+            alert('Could not access microphone: ' + err);
+            console.error(err);
+        }
+    } else {
+        // ── STOP ──
+        const hardwareSampleRate = audioContext.sampleRate;
+        stopRecordingInternal();
+        isRecording = false;
 
-        startBtn.style.display = 'none';
-        stopBtn.style.display = 'block';
-        recordState.innerHTML = '<span class="record-indicator"></span><strong>Recording...</strong>';
-    } catch (err) {
-        alert("Could not access microphone: " + err);
-        console.error(err);
+        const samples = new Float32Array(recordingLength);
+        let offset = 0;
+        for (let i = 0; i < leftChannel.length; i++) {
+            samples.set(leftChannel[i], offset);
+            offset += leftChannel[i].length;
+        }
+
+        let finalSamples = samples;
+        if (hardwareSampleRate !== targetSampleRate) {
+            finalSamples = resample(samples, hardwareSampleRate, targetSampleRate);
+        }
+
+        const wavBuffer = encodeWav(finalSamples, targetSampleRate);
+        const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+        audioPlayback.src = URL.createObjectURL(audioBlob);
+
+        recordUI.style.display = 'none';
+        saveUI.style.display   = 'flex';
     }
-};
-
-stopBtn.onclick = () => {
-    const hardwareSampleRate = audioContext.sampleRate;
-    stopRecordingInternal();
-
-    const samples = new Float32Array(recordingLength);
-    let offset = 0;
-    for (let i = 0; i < leftChannel.length; i++) {
-        samples.set(leftChannel[i], offset);
-        offset += leftChannel[i].length;
-    }
-
-    let finalSamples = samples;
-    if (hardwareSampleRate !== targetSampleRate) {
-        console.log(`Resampling from ${hardwareSampleRate} Hz to ${targetSampleRate} Hz`);
-        finalSamples = resample(samples, hardwareSampleRate, targetSampleRate);
-    }
-
-    const wavBuffer = encodeWav(finalSamples, targetSampleRate);
-    const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
-
-    console.log("Recording stopped. WAV size:", audioBlob.size, "at", targetSampleRate, "Hz");
-
-    const audioUrl = URL.createObjectURL(audioBlob);
-    audioPlayback.src = audioUrl;
-
-    recordUI.style.display = 'none';
-    saveUI.style.display = 'block';
 };
 
 function resample(samples, fromRate, toRate) {
