@@ -13,6 +13,7 @@
         <button type="button" class="btn" id="recordBtn" style="background-color: #139b06;">Record Audio</button>
     </div>
 
+
     <h1>{{ project.name }}</h1>
     <div class="project-meta">
         <span>Sample Rate: {{ project.sample_rate }} Hz</span>
@@ -34,10 +35,10 @@
                     <div class="waveform-controls">
                         <button class="play-pause-btn" data-id="{{ transcript.id }}" title="Play / Pause">
                             <svg class="icon-play" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
+                                <path d="M8 5v14l11-7z" />
                             </svg>
                             <svg class="icon-pause" viewBox="0 0 24 24" style="display:none;">
-                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                             </svg>
                         </button>
                         <div class="time-display">
@@ -47,7 +48,8 @@
                         </div>
                     </div>
                 </div>
-                <span class="audio-src" data-src="{% url 'serve_audio' transcript.id %}" data-id="{{ transcript.id }}" style="display:none;"></span>
+                <span class="audio-src" data-src="{% url 'serve_audio' transcript.id %}" data-id="{{ transcript.id }}"
+                    style="display:none;"></span>
 
                 <div class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">
                     <span>Uploaded: {{ transcript.created_at|date:"d M Y H:i" }}</span>

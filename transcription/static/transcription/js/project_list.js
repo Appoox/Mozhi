@@ -111,3 +111,54 @@ window.onclick = (event) => {
         importModal.style.display = 'none';
     }
 };
+const importProjectForm = document.getElementById('importProjectForm');
+const importStatusText = document.getElementById('importStatusText');
+const importProgressBar = document.getElementById('importProgressBar');
+const closeImportModalBtn = document.getElementById('closeImportModalBtn');
+
+if (importProjectForm) {
+    importProjectForm.onsubmit = async (e) => {
+        e.preventDefault();
+
+        // UI Transitions
+        document.getElementById('importInitialBody').style.display = 'none';
+        document.getElementById('importProgressBody').style.display = 'block';
+        document.getElementById('startImportBtn').style.display = 'none';
+        document.getElementById('cancelImportBtn').style.display = 'none';
+
+        const formData = new FormData(importProjectForm);
+        const url = importProjectForm.getAttribute('action');
+
+        try {
+            importStatusText.textContent = "Validating and importing...";
+
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            // Check if the response is actually JSON before parsing
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Server returned an invalid response (likely an HTML error). Check Django logs.");
+            }
+
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
+                importProgressBar.style.width = '100%';
+                importStatusText.textContent = "Import Complete!";
+                closeImportModalBtn.style.display = 'block';
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                throw new Error(result.error || "Import failed");
+            }
+        } catch (error) {
+            importStatusText.textContent = error.message;
+            importStatusText.style.color = "#c0392b";
+            closeImportModalBtn.style.display = 'block';
+            closeImportModalBtn.textContent = "Close";
+        }
+    };
+}
