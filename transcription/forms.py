@@ -15,10 +15,10 @@ class ImportProjectForm(forms.Form):
         max_length=50,
         label="Folder Name (Project Name)",
     )
-    folder_path = forms.CharField(
-        max_length=255,
-        label="Base Folder Path",
-    )
+    # folder_path = forms.CharField(
+    #     max_length=255,
+    #     label="Base Folder Path",
+    # )
     sample_rate = forms.TypedChoiceField(
         choices=[(str(k), v) for k, v in Project.SAMPLE_RATE_CHOICES],
         initial='44100',

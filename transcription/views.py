@@ -78,14 +78,14 @@ def import_project(request):
             return redirect('project_list')
 
         folder_name = form.cleaned_data['folder_name']
-        folder_path = form.cleaned_data['folder_path']
+        # folder_path = form.cleaned_data['folder_path']
         sample_rate = form.cleaned_data['sample_rate']  # already an int
 
-        if folder_path != SAVE_DIR:
-            messages.error(request, "Folder is not in the correct directory")
-            return redirect('project_list')
+        # if folder_path != SAVE_DIR:
+        #     messages.error(request, "Folder is not in the correct directory")
+        #     return redirect('project_list')
             
-        full_target_dir = os.path.join(folder_path, folder_name)
+        full_target_dir = os.path.join(SAVE_DIR, folder_name)
         
         # 2. Validation: Ensure it doesn't already exist in the database
         if Project.objects.filter(name=folder_name).exists():
@@ -101,7 +101,7 @@ def import_project(request):
             # Create Project Record
             project = Project.objects.create(
                 name=folder_name,
-                folder_path=folder_path,
+                folder_path=SAVE_DIR,
                 sample_rate=sample_rate,
                 # Note: Add default sample_rate or other fields here if your model requires them
             )
