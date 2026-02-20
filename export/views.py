@@ -1,4 +1,4 @@
-from Mozhi.settings import PAGE_NUM
+from Mozhi.settings import PAGE_NUM, BATCH_SIZE
 import json
 import os
 import shutil
@@ -39,38 +39,49 @@ import time
 def export_project_json(request, project_id):
     if request.method == 'POST':
         project = get_object_or_404(Project, id=project_id)
-        transcripts = Transcript.objects.filter(project=project)
-        total_count = transcripts.count()
+        total_count = Transcript.objects.filter(project=project).count()
+        batch_size = int(BATCH_SIZE)
 
         def stream_progress():
             data = []
+            processed = 0
+
             # Send initial count
             yield json.dumps({"type": "init", "total": total_count}) + "\n"
-            
-            for i, t in enumerate(transcripts, 1):
-                # audio_file is now a CharField storing the filename
+
+            # Process in batches using iterator() to avoid loading all records into memory
+            transcripts = (
+                Transcript.objects
+                .filter(project=project)
+                .only('audio_file', 'transcript')  # fetch only needed fields
+                .iterator(chunk_size=batch_size)
+            )
+
+            for t in transcripts:
                 filename = os.path.basename(t.audio_file)
-                entry = {
+                data.append({
                     "audio_filepath": f"audio/{filename}",
                     "text": t.transcript if t.transcript else ""
-                }
-                data.append(entry)
-                
-                # Send progress update
-                yield json.dumps({"type": "progress", "current": i}) + "\n"
-            
-            response_content = json.dumps(data, indent=4)
-            
+                })
+                processed += 1
+
+                # Yield a progress update after each batch boundary
+                if processed % batch_size == 0:
+                    yield json.dumps({"type": "progress", "current": processed}) + "\n"
+
+            # Yield final progress if the total wasn't a clean multiple of batch_size
+            if processed % batch_size != 0:
+                yield json.dumps({"type": "progress", "current": processed}) + "\n"
+
             # Save to project folder as details.json
             try:
                 project_dir = os.path.join(project.folder_path, project.name)
-                if not os.path.exists(project_dir):
-                    os.makedirs(project_dir, exist_ok=True)
-                    
+                os.makedirs(project_dir, exist_ok=True)
+
                 json_file_path = os.path.join(project_dir, 'details.json')
                 with open(json_file_path, 'w') as f:
-                    f.write(response_content)
-                
+                    json.dump(data, f, indent=4)
+
                 yield json.dumps({"type": "success", "message": f"Exported to {json_file_path}"}) + "\n"
             except Exception as e:
                 yield json.dumps({"type": "error", "error": str(e)}) + "\n"

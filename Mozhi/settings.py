@@ -26,6 +26,9 @@ SAVE_DIR = env.str("SAVE_DIR", default=os.path.join(BASE_DIR, 'Projects'))
 #Custom Variable to set pagination
 PAGE_NUM = env.str("PAGE_NUM", default = 10)
 
+#Custom Import Batch Size variable
+BATCH_SIZE = env.int("BATCH_SIZE", default = 500)
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 

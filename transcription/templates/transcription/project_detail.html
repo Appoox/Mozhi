@@ -25,10 +25,30 @@
         <div class="transcript-item">
             <div class="audio-section">
                 <span class="audio-label">{{ transcript.audio_file }}</span>
-                <audio controls>
-                    <source src="{% url 'serve_audio' transcript.id %}" type="audio/wav">
-                    Your browser does not support the audio element.
-                </audio>
+
+                <!-- Waveform Player — WaveSurfer if CDN available, else canvas fallback -->
+                <div class="waveform-player" id="player-{{ transcript.id }}">
+                    <div class="waveform-wrapper" id="waveform-{{ transcript.id }}">
+                        <!-- Canvas inserted here by fallback; WaveSurfer inserts its own canvas -->
+                    </div>
+                    <div class="waveform-controls">
+                        <button class="play-pause-btn" data-id="{{ transcript.id }}" title="Play / Pause">
+                            <svg class="icon-play" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                            <svg class="icon-pause" viewBox="0 0 24 24" style="display:none;">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                            </svg>
+                        </button>
+                        <div class="time-display">
+                            <span class="current-time" id="current-{{ transcript.id }}">0:00</span>
+                            <span class="time-sep">/</span>
+                            <span class="total-time" id="total-{{ transcript.id }}">0:00</span>
+                        </div>
+                    </div>
+                </div>
+                <span class="audio-src" data-src="{% url 'serve_audio' transcript.id %}" data-id="{{ transcript.id }}" style="display:none;"></span>
+
                 <div class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">
                     <span>Uploaded: {{ transcript.created_at|date:"d M Y H:i" }}</span>
                 </div>
@@ -75,32 +95,37 @@
 
     <!-- Recording Modal -->
     <div id="recordingModal" class="modal">
-        <div class="modal-content" style="max-width: 600px; margin-top: 5%;">
-            <div class="modal-header">
+        <div class="recording-modal-content">
+            <div class="recording-modal-header">
                 <h2>Record Audio</h2>
                 <span class="close" id="closeRecording">&times;</span>
             </div>
 
-            <div class="recording-box" id="recordUI">
-                <div id="recordState">
-                    <p>Click "Start" to begin recording.</p>
+            <!-- Stage 1: Record -->
+            <div id="recordUI" class="recording-stage">
+                <div class="record-ring" id="recordRing">
+                    <button class="record-circle-btn" id="recordCircleBtn" title="Start / Stop recording">
+                        <span class="dot"></span>
+                    </button>
                 </div>
-                <div class="timer" id="timer">00:00</div>
-                <div style="display: flex; justify-content: center; gap: 10px;">
-                    <button type="button" class="btn" id="startBtn" style="background-color: #28a745;">Start</button>
-                    <button type="button" class="btn" id="stopBtn"
-                        style="background-color: #dc3545; display: none;">Stop</button>
+
+                <div class="record-bars" id="recordBars">
+                    <span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span>
                 </div>
+
+                <div class="record-timer" id="timer">0:00</div>
+                <p class="record-hint" id="recordHint">Tap to start recording</p>
             </div>
 
-            <div id="saveUI" style="display: none;">
-                <audio id="audioPlayback" controls style="width: 100%; margin-bottom: 15px;"></audio>
-                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Enter Transcript:</label>
-                <textarea class="transcript-input" id="recordedTranscript"
-                    placeholder="Enter the text for this audio..."></textarea>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="btn btn-secondary" id="resetBtn">Discard & Retry</button>
-                    <button type="button" class="btn btn-primary" id="saveRecordBtn">Save to Project</button>
+            <!-- Stage 2: Save -->
+            <div id="saveUI" class="save-stage" style="display:none;">
+                <audio id="audioPlayback" controls></audio>
+                <label>Transcript</label>
+                <textarea id="recordedTranscript" placeholder="Enter the text for this audio..."></textarea>
+                <div class="save-stage-actions">
+                    <button type="button" class="btn btn-secondary" id="resetBtn">Discard &amp; Retry</button>
+                    <button type="button" class="btn" id="saveRecordBtn" style="background:#139b06;">Save</button>
                 </div>
             </div>
         </div>
@@ -134,6 +159,7 @@
         window.csrfToken = "{{ csrf_token }}";
         window.saveRecordUrl = "{% url 'save_record' %}";
     </script>
+
     <script src="{% static 'transcription/js/project_detail.js' %}"></script>
 </body>
 

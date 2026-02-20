@@ -7,6 +7,10 @@ const projectNameDisplay = document.getElementById('projectNameDisplay');
 const deleteFilesCheckbox = document.getElementById('deleteFilesCheckbox');
 const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+// Add these variables at the top
+const importModal = document.getElementById('importModal');
+const openImportModalBtn = document.getElementById('openImportModalBtn');
+const cancelImportBtn = document.getElementById('cancelImportBtn');
 
 let projectToDelete = null;
 
@@ -80,5 +84,30 @@ confirmDeleteBtn.onclick = async () => {
         confirmDeleteBtn.disabled = false;
         confirmDeleteBtn.textContent = 'Confirm Delete';
         deleteModal.style.display = 'none';
+    }
+};
+
+
+// Add to Modal Logic
+if (openImportModalBtn) {
+    openImportModalBtn.onclick = () => {
+        importModal.style.display = 'block';
+    };
+}
+
+if (cancelImportBtn) {
+    cancelImportBtn.onclick = () => {
+        importModal.style.display = 'none';
+    };
+}
+
+// Update the global window.onclick to close the import modal
+window.onclick = (event) => {
+    if (event.target == deleteModal) {
+        deleteModal.style.display = 'none';
+    } else if (event.target == createModal) {
+        createModal.style.display = 'none';
+    } else if (event.target == importModal) {
+        importModal.style.display = 'none';
     }
 };
