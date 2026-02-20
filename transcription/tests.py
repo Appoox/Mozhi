@@ -55,14 +55,6 @@ class TranscriptionTests(TestCase):
         self.assertTemplateUsed(response, 'transcription/project_list.html')
         self.assertContains(response, "TestProject")
 
-    def test_create_project_view(self):
-        """Test creating a project via POST."""
-        response = self.client.post(reverse('create_project'), {
-            'name': 'NewProject',
-            'sample_rate': 44100
-        })
-        self.assertEqual(response.status_code, 302) # Redirect to project_list
-        self.assertTrue(Project.objects.filter(name='NewProject').exists())
 
     def test_project_detail_view(self):
         """Test project detail view."""

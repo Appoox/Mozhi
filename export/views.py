@@ -19,14 +19,25 @@ def project_list(request):
         'page_obj': page_obj,
         })
 
+def _audio_path(transcript):
+    """Return the absolute path to a transcript's audio file."""
+    project = transcript.project
+    return os.path.join(project.folder_path, project.name, 'audio', transcript.audio_file)
+
+
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     transcripts_list = project.transcripts.all().order_by('-created_at')
-    
-    paginator = Paginator(transcripts_list, PAGE_NUM) # Show 10 transcripts per page
+
+    paginator = Paginator(transcripts_list, PAGE_NUM)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
+    # Annotate each transcript on the current page with audio_exists so the
+    # template can show a warning badge without an extra DB or fs round-trip.
+    for t in page_obj:
+        t.audio_exists = os.path.exists(_audio_path(t))
+
     return render(request, 'export/project_detail.html', {
         'project': project,
         'page_obj': page_obj
@@ -59,6 +70,15 @@ def export_project_json(request, project_id):
 
             for t in transcripts:
                 filename = os.path.basename(t.audio_file)
+                file_path = os.path.join(project.folder_path, project.name, 'audio', filename)
+
+                if not os.path.exists(file_path):
+                    yield json.dumps({
+                        "type": "error",
+                        "error": f"Audio file not found on disk: {filename}"
+                    }) + "\n"
+                    return  # abort — nothing is written to details.json
+
                 data.append({
                     "audio_filepath": f"audio/{filename}",
                     "text": t.transcript if t.transcript else ""

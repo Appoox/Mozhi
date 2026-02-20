@@ -52,6 +52,12 @@ class ExportTests(TestCase):
 
     def test_export_project_json_view(self):
         """Test NDJSON streaming export and details.json file creation."""
+        # Create the audio file on disk — the export now aborts if it's missing.
+        audio_dir = os.path.join(TEST_MEDIA_ROOT, self.project.name, 'audio')
+        os.makedirs(audio_dir, exist_ok=True)
+        with open(os.path.join(audio_dir, self.transcript.audio_file), 'wb') as f:
+            f.write(b'RIFF')  # minimal stub
+
         response = self.client.post(reverse('export:export_project_json', args=[self.project.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/x-ndjson')
@@ -91,3 +97,49 @@ class ExportTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['status'], 'success')
         self.assertFalse(Transcript.objects.filter(id=self.transcript.id).exists())
+
+    # ── Audio validation tests ────────────────────────────────────────
+
+    def test_project_detail_audio_exists_flag(self):
+        """When the audio file exists, audio_exists is True on the context object."""
+        # Create the actual file that serve_audio would look for
+        audio_dir = os.path.join(TEST_MEDIA_ROOT, self.project.name, 'audio')
+        os.makedirs(audio_dir, exist_ok=True)
+        audio_path = os.path.join(audio_dir, self.transcript.audio_file)
+        with open(audio_path, 'wb') as f:
+            f.write(b'RIFF')  # minimal stub
+
+        response = self.client.get(reverse('export:project_detail', args=[self.project.id]))
+        self.assertEqual(response.status_code, 200)
+
+        page_obj = response.context['page_obj']
+        transcript_in_ctx = list(page_obj)[0]
+        self.assertTrue(transcript_in_ctx.audio_exists)
+
+    def test_project_detail_audio_missing_flag(self):
+        """When the audio file is absent, audio_exists is False and badge appears in HTML."""
+        # Do NOT create the audio file — it should be missing
+        response = self.client.get(reverse('export:project_detail', args=[self.project.id]))
+        self.assertEqual(response.status_code, 200)
+
+        page_obj = response.context['page_obj']
+        transcript_in_ctx = list(page_obj)[0]
+        self.assertFalse(transcript_in_ctx.audio_exists)
+        self.assertContains(response, 'Audio file missing')
+
+    def test_export_json_errors_on_missing_audio(self):
+        """If any audio file is missing on disk, export yields an error and writes no details.json."""
+        # Audio file is NOT created — transcript.audio_file points to a nonexistent path
+        response = self.client.post(reverse('export:export_project_json', args=[self.project.id]))
+        self.assertEqual(response.status_code, 200)
+
+        content = b''.join(response.streaming_content).decode()
+        lines = [l for l in content.strip().split('\n') if l.strip()]
+
+        error_lines = [l for l in lines if '"type": "error"' in l]
+        self.assertTrue(len(error_lines) > 0, "Expected an error message in the stream")
+
+        # details.json must NOT have been written
+        project_dir = os.path.join(self.project.folder_path, self.project.name)
+        details_json_path = os.path.join(project_dir, 'details.json')
+        self.assertFalse(os.path.exists(details_json_path), "details.json should not be written on error")

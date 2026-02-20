@@ -81,7 +81,7 @@ h1 {
 }
 
 /* Override WaveSurfer's internal scroll container */
-.waveform-wrapper > div {
+.waveform-wrapper>div {
     overflow: hidden !important;
 }
 
@@ -315,4 +315,28 @@ h1 {
     border-radius: 6px;
     cursor: pointer;
     align-self: flex-start;
+}
+
+/* ── Audio validation ── */
+.badge-missing {
+    display: inline-block;
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.player-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 64px;
+    color: #c0392b;
+    font-size: 0.8rem;
+    font-style: italic;
+    background: #fff5f5;
+    border-radius: 4px;
 }

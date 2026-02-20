@@ -27,7 +27,8 @@
                 <p class="progress-count" id="exportProgressCount"></p>
             </div>
             <div class="modal-footer">
-                <button class="btn" id="closeExportModalBtn" style="display:none; background:#e0e0e0; color:#333;">Close</button>
+                <button class="btn" id="closeExportModalBtn"
+                    style="display:none; background:#e0e0e0; color:#333;">Close</button>
             </div>
         </div>
     </div>
@@ -39,11 +40,14 @@
         <span>Path: {{ project.folder_path }}/{{ project.name }}</span>
     </div>
 
-        <div class="transcript-container">
+    <div class="transcript-container">
         {% for transcript in page_obj %}
         <div class="transcript-item">
             <div class="audio-section">
                 <span class="audio-label">{{ transcript.audio_file }}</span>
+                {% if not transcript.audio_exists %}
+                <span class="badge-missing">⚠ Audio file missing</span>
+                {% endif %}
 
                 <!-- Waveform Player — WaveSurfer if CDN available, else canvas fallback -->
                 <div class="waveform-player" id="player-{{ transcript.id }}">
@@ -53,10 +57,10 @@
                     <div class="waveform-controls">
                         <button class="play-pause-btn" data-id="{{ transcript.id }}" title="Play / Pause">
                             <svg class="icon-play" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
+                                <path d="M8 5v14l11-7z" />
                             </svg>
                             <svg class="icon-pause" viewBox="0 0 24 24" style="display:none;">
-                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                             </svg>
                         </button>
                         <div class="time-display">
@@ -66,7 +70,8 @@
                         </div>
                     </div>
                 </div>
-                <span class="audio-src" data-src="{% url 'serve_audio' transcript.id %}" data-id="{{ transcript.id }}" style="display:none;"></span>
+                <span class="audio-src" data-src="{% url 'serve_audio' transcript.id %}" data-id="{{ transcript.id }}"
+                    style="display:none;"></span>
 
                 <div class="project-meta" style="margin-bottom: 0; font-size: 0.75rem;">
                     <span>Uploaded: {{ transcript.created_at|date:"d M Y H:i" }}</span>
@@ -141,10 +146,9 @@
     </script>
 
     <!-- WaveSurfer.js — canvas fallback used automatically if this fails to load -->
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/7.8.7/wavesurfer.min.js"
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/7.8.7/wavesurfer.min.js"
         onerror="window.waveSurferFailed = true;">
-    </script>
+        </script>
 
     <script src="{% static 'export/js/project_detail.js' %}"></script>
 </body>

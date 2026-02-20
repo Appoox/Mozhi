@@ -386,6 +386,16 @@ function wirePlayPause(playBtn, isPlayingFn, toggleFn) {
     };
 }
 
+// ── Player error helper ───────────────────────────────────────────────
+// Replaces the waveform area with a readable error message and disables
+// the play button — called when serve_audio returns 404 or decoding fails.
+function showPlayerError(wrapper, playBtn, message) {
+    wrapper.innerHTML = `<div class="player-error">⚠ ${message}</div>`;
+    playBtn.disabled = true;
+    playBtn.style.opacity = '0.4';
+    playBtn.style.cursor = 'not-allowed';
+}
+
 // ── Canvas Fallback Player ────────────────────────────────────────────
 // Uses Web Audio API (decodeAudioData) + HTMLAudioElement — zero CDN.
 function initFallbackPlayer(id, src) {
@@ -442,7 +452,13 @@ function initFallbackPlayer(id, src) {
 
     // Decode audio and build peak data
     fetch(src)
-        .then(r => r.arrayBuffer())
+        .then(r => {
+            if (!r.ok) {
+                // HTTP error (e.g. 404 — audio file missing on disk)
+                throw Object.assign(new Error(`HTTP ${r.status}`), { httpStatus: r.status });
+            }
+            return r.arrayBuffer();
+        })
         .then(buf => new (window.AudioContext || window.webkitAudioContext)().decodeAudioData(buf))
         .then(decoded => {
             duration = decoded.duration;
@@ -463,7 +479,12 @@ function initFallbackPlayer(id, src) {
 
             drawWaveform(0);
         })
-        .catch(() => drawWaveform(0));
+        .catch(err => {
+            const msg = err.httpStatus === 404
+                ? 'Audio file not found'
+                : 'Could not load audio';
+            showPlayerError(wrapper, playBtn, msg);
+        });
 
     // HTMLAudioElement for playback
     const audio = new Audio(src);
@@ -524,6 +545,13 @@ function initWaveSurferPlayer(id, src) {
     ws.on('play', () => syncIcons(true));
     ws.on('pause', () => syncIcons(false));
     ws.on('finish', () => syncIcons(false));
+    ws.on('error', (err) => {
+        // WaveSurfer fires this on HTTP 404 or decoding failures
+        const msg = (err && err.message && err.message.includes('404'))
+            ? 'Audio file not found'
+            : 'Could not load audio';
+        showPlayerError(container, playBtn, msg);
+    });
 }
 
 // ── Init all players ──────────────────────────────────────────────────
