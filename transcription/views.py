@@ -9,7 +9,6 @@ from .models import Transcript, Project
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
-from pathlib import Path
 
 
 def project_list(request):
@@ -68,8 +67,10 @@ def create_project(request):
         form = ProjectForm()
     return render(request, 'transcription/create_project.html', {'form': form})
 
+from django.db import transaction  # Import transactions for data integrity
+
 def import_project(request):
-    """View to import an existing project folder and batch-load its JSON."""
+    """View to import an existing project folder and batch-load its JSON with audio validation."""
     if request.method == 'POST':
         form = ImportProjectForm(request.POST)
         if not form.is_valid():
@@ -78,71 +79,75 @@ def import_project(request):
             return redirect('project_list')
 
         folder_name = form.cleaned_data['folder_name']
-        # folder_path = form.cleaned_data['folder_path']
-        sample_rate = form.cleaned_data['sample_rate']  # already an int
-
-        # if folder_path != SAVE_DIR:
-        #     messages.error(request, "Folder is not in the correct directory")
-        #     return redirect('project_list')
-            
+        sample_rate = form.cleaned_data['sample_rate']
         full_target_dir = os.path.join(SAVE_DIR, folder_name)
         
-        # 2. Validation: Ensure it doesn't already exist in the database
+        # 1. Validation: Database and Physical Folder Check
         if Project.objects.filter(name=folder_name).exists():
             messages.error(request, f'Project "{folder_name}" already exists in the database.')
             return redirect('project_list')
 
-        # Validation: Check if the folder physically exists to import from
         if not os.path.exists(full_target_dir):
-            messages.error(request, f'The folder "{full_target_dir}" does not exist on the server.')
+            messages.error(request, f'The folder "{full_target_dir}" does not exist.')
+            return redirect('project_list')
+
+        json_path = os.path.join(full_target_dir, 'details.json') 
+        if not os.path.exists(json_path):
+            messages.error(request, 'details.json not found.')
             return redirect('project_list')
 
         try:
-            # Create Project Record
-            project = Project.objects.create(
-                name=folder_name,
-                folder_path=SAVE_DIR,
-                sample_rate=sample_rate,
-                # Note: Add default sample_rate or other fields here if your model requires them
-            )
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
 
-            # 3. Batch import the JSON data
-            # Assumes your JSON is a list of dicts: [{"text": "hjkl", "audio_filepath": "audio/d01e9212-f383-415b-849d-1efb41737982.wav"}]
-            json_path = os.path.join(full_target_dir, 'details.json') 
-            
-            if os.path.exists(json_path):
-                with open(json_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                # Fetch fallback user
-                user = request.user if request.user.is_authenticated else None
-                if not user:
-                    from django.contrib.auth.models import User
-                    user = User.objects.filter(is_superuser=True).first() or User.objects.first()
+            # Determine fallback user
+            user = request.user if request.user.is_authenticated else None
+            if not user:
+                from django.contrib.auth.models import User
+                user = User.objects.filter(is_superuser=True).first() or User.objects.first()
 
-                # Build Transcript instances in memory
-                transcripts_to_create = [
-                    Transcript(
-                        project=project,
-                        user=user,
-                        transcript=item.get('text'),
-                        audio_file=item.get('audio_filepath')
-                    ) for item in data
-                ]
-                
-                # Execute batched DB commit (500 items per query) to heavily reduce server load
-                Transcript.objects.bulk_create(transcripts_to_create, batch_size=BATCH_SIZE)
-                messages.success(request, f'Project "{folder_name}" imported successfully with {len(transcripts_to_create)} transcripts.')
-            else:
-                messages.warning(request, f'Project "{folder_name}" imported, but no "details.json" was found in the folder.')
+            # Wrap in a transaction: if one batch fails, nothing is saved
+            with transaction.atomic():
+                project = Project.objects.create(
+                    name=folder_name,
+                    folder_path=SAVE_DIR,
+                    sample_rate=sample_rate,
+                )
+
+                # 2. Process in batches to reduce system load
+                for i in range(0, len(data), BATCH_SIZE):
+                    batch = data[i : i + BATCH_SIZE]
+                    transcripts_to_create = []
+
+                    for item in batch:
+                        audio_rel_path = item.get('audio_filepath')
+                        # Check if audio exists physically in the folder
+                        audio_full_path = os.path.join(full_target_dir, audio_rel_path)
+                        
+                        if not os.path.exists(audio_full_path):
+                            raise FileNotFoundError(f"Missing audio file: {audio_rel_path}")
+
+                        # Clean the path: store only the filename 'uuid.wav' 
+                        # instead of 'audio/uuid.wav' to match serve_audio logic
+                        clean_filename = os.path.basename(audio_rel_path)
+
+                        transcripts_to_create.append(
+                            Transcript(
+                                project=project,
+                                user=user,
+                                transcript=item.get('text'),
+                                audio_file=clean_filename  # Fixes the 'unplayable' path issue
+                            )
+                        )
+                    
+                    # Save this specific batch
+                    Transcript.objects.bulk_create(transcripts_to_create)
+
+                messages.success(request, f'Imported {len(data)} records successfully.')
 
         except Exception as e:
-            if 'project' in locals():
-                project.delete()  # Rollback project creation if something crashes
-            messages.error(request, f'Error during import: {str(e)}')
+            messages.error(request, f'Import failed: {str(e)}')
             
-        # return redirect('project_list')
-        
     return redirect('project_list')
 
 from django.core.files.base import ContentFile
