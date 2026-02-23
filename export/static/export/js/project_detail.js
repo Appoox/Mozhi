@@ -591,3 +591,92 @@ document.querySelectorAll('.audio-src').forEach(function (el) {
     const src = el.dataset.src; // This URL must resolve to a valid audio file
     useWaveSurfer ? initWaveSurferPlayer(id, src) : initFallbackPlayer(id, src);
 });
+
+// ── Inline Edit Transcript Logic ──────────────────────────────────────
+document.querySelectorAll('.edit-transcript-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const id = btn.getAttribute('data-id');
+        const textContainer = document.getElementById(`transcript-text-${id}`);
+        const editContainer = document.getElementById(`edit-container-${id}`);
+
+        // Toggle visibility
+        textContainer.style.display = 'none';
+        editContainer.style.display = 'block';
+    });
+});
+
+document.querySelectorAll('.cancel-edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const id = btn.getAttribute('data-id');
+        const textContainer = document.getElementById(`transcript-text-${id}`);
+        const editContainer = document.getElementById(`edit-container-${id}`);
+        const textarea = document.getElementById(`edit-textarea-${id}`);
+
+        // Reset textarea to original text
+        const originalText = textContainer.textContent.trim();
+        // Fallback for empty state text
+        if (originalText.includes('Transcription in progress')) {
+            textarea.value = '';
+        } else {
+            textarea.value = originalText;
+        }
+
+        // Toggle visibility
+        editContainer.style.display = 'none';
+        textContainer.style.display = 'block';
+    });
+});
+
+document.querySelectorAll('.save-edit-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        const id = btn.getAttribute('data-id');
+        const textContainer = document.getElementById(`transcript-text-${id}`);
+        const editContainer = document.getElementById(`edit-container-${id}`);
+        const textarea = document.getElementById(`edit-textarea-${id}`);
+        const originalText = btn.innerHTML;
+
+        const newText = textarea.value.trim();
+        const url = window.editTranscriptUrlTemplate.replace('00000000-0000-0000-0000-000000000000', id);
+
+        // Update button state
+        btn.disabled = true;
+        btn.innerHTML = 'Saving...';
+
+        const formData = new FormData();
+        formData.append('text', newText);
+        formData.append('csrfmiddlewaretoken', window.csrfToken);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Update text display
+                if (newText) {
+                    textContainer.textContent = newText;
+                    textContainer.style.color = '#444';
+                    textContainer.style.fontStyle = 'normal';
+                } else {
+                    textContainer.innerHTML = '<em style="color: #999;">Transcription in progress or not available yet...</em>';
+                }
+
+                // Toggle back
+                editContainer.style.display = 'none';
+                textContainer.style.display = 'block';
+            } else {
+                alert('Failed to save transcript: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('An error occurred while saving.');
+        } finally {
+            // Restore button state
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+});

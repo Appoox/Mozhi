@@ -164,18 +164,21 @@ h1 {
 }
 
 .edit-transcript-btn {
-    background: transparent;
+    background: #e0e0e0;
     border: none;
-    color: #139b06;
+    color: #333;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
-    padding: 0;
-    text-decoration: underline;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
 }
 
 .edit-transcript-btn:hover {
-    color: #0e7304;
+    background: #139b06;
+    color: #fff;
 }
 
 .edit-transcript-container {

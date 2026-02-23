@@ -52,6 +52,7 @@ h1 {
 .audio-section {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 12px;
     width: 100%;
 }
@@ -339,4 +340,77 @@ h1 {
     font-style: italic;
     background: #fff5f5;
     border-radius: 4px;
+}
+
+/* ── Inline Edit Transcript Styles ── */
+.edit-transcript-btn {
+    background: #e0e0e0;
+    border: none;
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.edit-transcript-btn:hover {
+    background: #139b06;
+    color: #fff;
+}
+
+.edit-transcript-container {
+    display: none;
+    margin-top: 10px;
+}
+
+.edit-transcript-textarea {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+.edit-transcript-textarea:focus {
+    outline: none;
+    border-color: #1a1a2e;
+    box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.1);
+}
+
+.edit-transcript-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.save-edit-btn {
+    background: #1a1a2e;
+    border: none;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.save-edit-btn:hover {
+    background: #2a2a4e;
+}
+
+.save-edit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
 }

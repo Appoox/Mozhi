@@ -79,14 +79,28 @@
                 <button class="delete-transcript-btn" data-id="{{ transcript.id }}">Delete</button>
             </div>
             <div class="transcript-section">
-                <h3>Transcription</h3>
-                <div class="transcript-section">
-                    <div class="transcript-text">
+                <h3>
+                    Transcription
+                    <button class="edit-transcript-btn" data-id="{{ transcript.id }}">Edit</button>
+                </h3>
+                <div class="transcript-section-content" style="border-left: none; padding-left: 0;">
+                    <div class="transcript-text" id="transcript-text-{{ transcript.id }}">
                         {% if transcript.transcript %}
                         {{ transcript.transcript }}
                         {% else %}
                         <em style="color: #999;">Transcription in progress or not available yet...</em>
                         {% endif %}
+                    </div>
+
+                    <div class="edit-transcript-container" id="edit-container-{{ transcript.id }}">
+                        <textarea class="edit-transcript-textarea"
+                            id="edit-textarea-{{ transcript.id }}">{{ transcript.transcript|default:'' }}</textarea>
+                        <div class="edit-transcript-actions">
+                            <button class="btn btn-secondary cancel-edit-btn"
+                                data-id="{{ transcript.id }}">Cancel</button>
+                            <button class="btn save-edit-btn" data-id="{{ transcript.id }}"
+                                style="background:#139b06;">Save</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -143,6 +157,7 @@
     <script>
         window.csrfToken = "{{ csrf_token }}";
         window.exportJsonUrl = "{% url 'export:export_project_json' project.id %}";
+        window.editTranscriptUrlTemplate = "{% url 'edit_transcript' transcript_id='00000000-0000-0000-0000-000000000000' %}";
     </script>
 
     <!-- WaveSurfer.js — canvas fallback used automatically if this fails to load -->
