@@ -196,6 +196,79 @@ confirmDeleteTranscriptBtn.onclick = async () => {
     }
 };
 
+// ── Transcript Inline Editing Logic ────────────────────────────────────────
+
+document.querySelectorAll('.edit-transcript-btn').forEach(btn => {
+    btn.onclick = () => {
+        const id = btn.getAttribute('data-id');
+        const textContainer = document.getElementById(`transcript-text-${id}`);
+        const editContainer = document.getElementById(`edit-container-${id}`);
+
+        textContainer.style.display = 'none';
+        editContainer.style.display = 'block';
+    };
+});
+
+document.querySelectorAll('.cancel-edit-btn').forEach(btn => {
+    btn.onclick = () => {
+        const id = btn.getAttribute('data-id');
+        const textContainer = document.getElementById(`transcript-text-${id}`);
+        const editContainer = document.getElementById(`edit-container-${id}`);
+        const textarea = document.getElementById(`edit-textarea-${id}`);
+
+        // Reset textarea value to original text
+        textarea.value = textContainer.innerText.trim();
+
+        editContainer.style.display = 'none';
+        textContainer.style.display = 'block';
+    };
+});
+
+document.querySelectorAll('.save-edit-btn').forEach(btn => {
+    btn.onclick = async () => {
+        const id = btn.getAttribute('data-id');
+        const textContainer = document.getElementById(`transcript-text-${id}`);
+        const editContainer = document.getElementById(`edit-container-${id}`);
+        const textarea = document.getElementById(`edit-textarea-${id}`);
+
+        const newText = textarea.value.trim();
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const formData = new FormData();
+        formData.append('text', newText);
+        formData.append('csrfmiddlewaretoken', window.csrfToken);
+
+        const url = window.editTranscriptUrlTemplate.replace('00000000-0000-0000-0000-000000000000', id);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                if (data.text) {
+                    textContainer.innerText = data.text;
+                } else {
+                    textContainer.innerHTML = '<em style="color: #999;">Transcription in progress or not available yet...</em>';
+                }
+                editContainer.style.display = 'none';
+                textContainer.style.display = 'block';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (err) {
+            alert('Failed to update transcript.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Save';
+        }
+    };
+});
+
+
 
 // ── Recording Logic ────────────────────────────────────────────────────────
 

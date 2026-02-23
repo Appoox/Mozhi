@@ -29,6 +29,7 @@ urlpatterns = [
     path('projects/<uuid:project_id>/', views.project_detail, name='project_detail'),
     path('projects/<uuid:project_id>/delete/', views.delete_project, name='delete_project'),
     path('transcripts/<uuid:transcript_id>/delete/', views.delete_transcript, name='delete_transcript'),
+    path('transcripts/<uuid:transcript_id>/edit/', views.edit_transcript, name='edit_transcript'),
     path('api/save-record/', views.save_record, name='save_record'),
     path('audio/<uuid:transcript_id>/', views.serve_audio, name='serve_audio'),
     path('export/', include('export.urls')),

@@ -52,6 +52,7 @@ h1 {
 .audio-section {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 12px;
     width: 100%;
 }
@@ -160,6 +161,53 @@ h1 {
     white-space: pre-wrap;
     overflow-wrap: break-word;
     word-break: break-word;
+}
+
+.edit-transcript-btn {
+    background: transparent;
+    border: none;
+    color: #139b06;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.edit-transcript-btn:hover {
+    color: #0e7304;
+}
+
+.edit-transcript-container {
+    display: none;
+    margin-top: 10px;
+}
+
+.edit-transcript-textarea {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.edit-transcript-textarea:focus {
+    border-color: #1a1a2e;
+}
+
+.edit-transcript-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 .empty-state {

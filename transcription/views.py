@@ -255,3 +255,19 @@ def delete_transcript(request, transcript_id):
             return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+def edit_transcript(request, transcript_id):
+    """View to update the text of an existing transcript."""
+    if request.method == 'POST':
+        transcript = get_object_or_404(Transcript, id=transcript_id)
+        new_text = request.POST.get('text', '').strip()
+        
+        try:
+            transcript.transcript = new_text
+            transcript.save()
+            return JsonResponse({'status': 'success', 'text': new_text})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
