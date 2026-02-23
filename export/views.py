@@ -56,6 +56,7 @@ def export_project_json(request, project_id):
         def stream_progress():
             data = []
             processed = 0
+            missing_files = []
 
             # Send initial count
             yield json.dumps({"type": "init", "total": total_count}) + "\n"
@@ -73,11 +74,8 @@ def export_project_json(request, project_id):
                 file_path = os.path.join(project.folder_path, project.name, 'audio', filename)
 
                 if not os.path.exists(file_path):
-                    yield json.dumps({
-                        "type": "error",
-                        "error": f"Audio file not found on disk: {filename}"
-                    }) + "\n"
-                    return  # abort — nothing is written to details.json
+                    missing_files.append(filename)
+                    continue  # log and skip missing file
 
                 data.append({
                     "audio_filepath": f"audio/{filename}",
@@ -102,7 +100,11 @@ def export_project_json(request, project_id):
                 with open(json_file_path, 'w') as f:
                     json.dump(data, f, indent=4)
 
-                yield json.dumps({"type": "success", "message": f"Exported to {json_file_path}"}) + "\n"
+                yield json.dumps({
+                    "type": "success", 
+                    "message": f"Exported to {json_file_path}",
+                    "missing_files": missing_files
+                }) + "\n"
             except Exception as e:
                 yield json.dumps({"type": "error", "error": str(e)}) + "\n"
 

@@ -52,9 +52,38 @@ if (exportJsonBtn) {
                             exportProgressCount.textContent = `${msg.current} / ${total}`;
                         } else if (msg.type === 'success') {
                             exportProgressBar.style.width = '100%';
-                            exportProgressBar.classList.add('success');
-                            exportStatusText.textContent = `✓ ${msg.message}`;
                             exportProgressCount.textContent = `${total} / ${total}`;
+
+                            if (msg.missing_files && msg.missing_files.length > 0) {
+                                exportStatusText.textContent = `✓ Exported, but ${msg.missing_files.length} audio files were missing.`;
+                                exportStatusText.style.color = '#c0392b';
+
+                                const logContainer = document.createElement('div');
+                                logContainer.style.marginTop = '15px';
+                                logContainer.style.textAlign = 'center';
+
+                                const downloadBtn = document.createElement('button');
+                                downloadBtn.className = 'btn btn-secondary';
+                                downloadBtn.textContent = 'Download Error Log';
+                                downloadBtn.onclick = () => {
+                                    const blob = new Blob([msg.missing_files.join('\n')], { type: 'text/plain' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `export_errors_${Date.now()}.txt`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                };
+
+                                logContainer.appendChild(downloadBtn);
+                                exportStatusText.parentNode.insertBefore(logContainer, exportStatusText.nextSibling);
+
+                                closeExportModalBtn.style.display = 'inline-block';
+                            } else {
+                                exportProgressBar.classList.add('success');
+                                exportStatusText.textContent = `✓ ${msg.message}`;
+                                closeExportModalBtn.style.display = 'inline-block';
+                            }
                         } else if (msg.type === 'error') {
                             exportProgressBar.classList.add('error');
                             exportStatusText.textContent = `✗ Error: ${msg.error}`;

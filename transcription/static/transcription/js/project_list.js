@@ -148,9 +148,39 @@ if (importProjectForm) {
 
             if (response.ok && result.status === 'success') {
                 importProgressBar.style.width = '100%';
-                importStatusText.textContent = "Import Complete!";
-                closeImportModalBtn.style.display = 'block';
-                setTimeout(() => location.reload(), 1000);
+
+                if (result.missing_files && result.missing_files.length > 0) {
+                    importStatusText.textContent = `Import Complete! However, ${result.missing_files.length} audio files were missing.`;
+                    importStatusText.style.color = '#c0392b';
+
+                    const logContainer = document.createElement('div');
+                    logContainer.style.marginTop = '15px';
+                    logContainer.style.textAlign = 'center';
+
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn btn-secondary';
+                    downloadBtn.textContent = 'Download Error Log';
+                    downloadBtn.onclick = () => {
+                        const blob = new Blob([result.missing_files.join('\n')], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `import_errors_${Date.now()}.txt`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    };
+
+                    logContainer.appendChild(downloadBtn);
+                    importStatusText.parentNode.insertBefore(logContainer, importStatusText.nextSibling);
+
+                    closeImportModalBtn.style.display = 'block';
+                    closeImportModalBtn.onclick = () => location.reload();
+                } else {
+                    importProgressBar.classList.add('success');
+                    importStatusText.textContent = "Import Complete!";
+                    closeImportModalBtn.style.display = 'block';
+                    setTimeout(() => location.reload(), 1000);
+                }
             } else {
                 throw new Error(result.error || "Import failed");
             }
@@ -159,6 +189,8 @@ if (importProjectForm) {
             importStatusText.style.color = "#c0392b";
             closeImportModalBtn.style.display = 'block';
             closeImportModalBtn.textContent = "Close";
+            closeImportModalBtn.onclick = () => location.reload();
+            importProgressBar.classList.add('error');
         }
     };
 }

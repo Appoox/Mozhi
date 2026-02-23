@@ -87,6 +87,12 @@ def import_project(request):
         folder_name = form.cleaned_data['folder_name']
         sample_rate = form.cleaned_data['sample_rate']
         full_target_dir = os.path.join(SAVE_DIR, folder_name)
+        
+        # Check if project already exists in database
+        if Project.objects.filter(name=folder_name).exists():
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'error': f'Project "{folder_name}" already exists. Please choose a different name or delete the existing project first.'}, status=400)
+            return redirect('project_list')
 
         if not os.path.exists(full_target_dir):
             if is_ajax:
@@ -103,6 +109,8 @@ def import_project(request):
                 from django.contrib.auth.models import User
                 user = User.objects.filter(is_superuser=True).first() or User.objects.first()
 
+            missing_files = []
+
             with transaction.atomic():
                 project = Project.objects.create(
                     name=folder_name,
@@ -118,9 +126,10 @@ def import_project(request):
                         audio_rel_path = item.get('audio_filepath')
                         audio_full_path = os.path.join(full_target_dir, audio_rel_path)
 
-                        # Validation: Throw error if audio is missing
+                        # Validation: Log if audio is missing and continue
                         if not os.path.exists(audio_full_path):
-                            raise FileNotFoundError(f"Missing audio file: {audio_rel_path}")
+                            missing_files.append(audio_rel_path)
+                            continue
 
                         # Clean the path to make it playable
                         clean_filename = os.path.basename(audio_rel_path)
@@ -136,7 +145,11 @@ def import_project(request):
                     Transcript.objects.bulk_create(transcripts_to_create)
 
             if is_ajax:
-                return JsonResponse({'status': 'success', 'message': f'Imported {len(data)} items'})
+                return JsonResponse({
+                    'status': 'success', 
+                    'message': f'Imported {len(data) - len(missing_files)} items',
+                    'missing_files': missing_files
+                })
             
             return redirect('project_list')
 
