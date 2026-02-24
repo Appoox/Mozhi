@@ -41,12 +41,17 @@ SECRET_KEY = env.str("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
 
+# Format: 'IP_ADDRESS:PORT'
+RUNSERVERPLUS_SERVER_ADDRESS_PORT = env("HOST_PORT")
+
+HOSTNAME = 'localhost:9797'
 ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'django_extensions',
     'transcription',
     'export',
     'django.contrib.admin',
