@@ -43,6 +43,11 @@ DEBUG = env.bool("DEBUG", default=False)
 
 ALLOWED_HOSTS = ["*"]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://dataset-label.vconsol.com/',
+    'http://localhost:8000',
+    ]
+
 
 # Application definition
 
