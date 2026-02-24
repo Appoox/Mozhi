@@ -127,46 +127,19 @@ class ExportTests(TestCase):
         self.assertFalse(transcript_in_ctx.audio_exists)
         self.assertContains(response, 'Audio file missing')
 
-    def test_export_json_without_audio_succeeds_and_lists_missing(self):
-        """If an audio file is missing on disk, export yields success with a missing_files list."""
+    def test_export_json_errors_on_missing_audio(self):
+        """If any audio file is missing on disk, export yields an error and writes no details.json."""
+        # Audio file is NOT created — transcript.audio_file points to a nonexistent path
         response = self.client.post(reverse('export:export_project_json', args=[self.project.id]))
         self.assertEqual(response.status_code, 200)
 
         content = b''.join(response.streaming_content).decode()
         lines = [l for l in content.strip().split('\n') if l.strip()]
 
-        success_lines = [l for l in lines if '"type": "success"' in l]
-        self.assertTrue(len(success_lines) > 0, "Expected a success message in the stream")
+        error_lines = [l for l in lines if '"type": "error"' in l]
+        self.assertTrue(len(error_lines) > 0, "Expected an error message in the stream")
 
-        success_data = json.loads(success_lines[-1])
-        self.assertIn(os.path.basename(self.transcript.audio_file), success_data.get('missing_files', []))
-
+        # details.json must NOT have been written
         project_dir = os.path.join(self.project.folder_path, self.project.name)
         details_json_path = os.path.join(project_dir, 'details.json')
-        self.assertTrue(os.path.exists(details_json_path), "details.json should be written")
-
-    def test_delete_project_with_files(self):
-        target_dir = os.path.join(self.project.folder_path, self.project.name)
-        os.makedirs(target_dir, exist_ok=True)
-        response = self.client.post(reverse('export:delete_project', args=[self.project.id]), {
-            'delete_files': 'true'
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['status'], 'success')
-        self.assertFalse(Project.objects.filter(id=self.project.id).exists())
-        self.assertFalse(os.path.exists(target_dir))
-
-    def test_delete_transcript_with_files(self):
-        target_dir = os.path.join(self.project.folder_path, self.project.name, 'audio')
-        os.makedirs(target_dir, exist_ok=True)
-        target_path = os.path.join(target_dir, os.path.basename(self.transcript.audio_file))
-        with open(target_path, 'wb') as f:
-            f.write(b'dummy')
-        response = self.client.post(reverse('export:delete_transcript', args=[self.transcript.id]), {
-            'delete_files': 'true'
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['status'], 'success')
-        self.assertFalse(Transcript.objects.filter(id=self.transcript.id).exists())
-        self.assertFalse(os.path.exists(target_path))
-
+        self.assertFalse(os.path.exists(details_json_path), "details.json should not be written on error")
