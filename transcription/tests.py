@@ -134,3 +134,75 @@ class TranscriptionTests(TestCase):
         response = self.client.get('/this-is-a-wrong-url/')
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('project_list'))
+
+    from unittest.mock import patch
+
+    @patch('transcription.views.SAVE_DIR', new=TEST_MEDIA_ROOT)
+    @patch('transcription.views.settings.SAVE_DIR', new=TEST_MEDIA_ROOT)
+    def test_create_project_view_post(self):
+        response = self.client.post(reverse('create_project'), {
+            'name': 'NewProject',
+            'sample_rate': 16000
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Project.objects.filter(name='NewProject').exists())
+
+    def test_edit_transcript_view(self):
+        response = self.client.post(reverse('edit_transcript', args=[self.transcript.id]), {
+            'text': 'Updated transcript text.'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'success')
+        self.transcript.refresh_from_db()
+        self.assertEqual(self.transcript.transcript, 'Updated transcript text.')
+
+    def test_delete_project_with_files(self):
+        target_dir = os.path.join(self.project.folder_path, self.project.name)
+        os.makedirs(target_dir, exist_ok=True)
+        response = self.client.post(reverse('delete_project', args=[self.project.id]), {
+            'delete_files': 'true'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Project.objects.filter(id=self.project.id).exists())
+        self.assertFalse(os.path.exists(target_dir))
+
+    def test_delete_transcript_with_files(self):
+        target_dir = os.path.join(self.project.folder_path, self.project.name, 'audio')
+        os.makedirs(target_dir, exist_ok=True)
+        target_path = os.path.join(target_dir, self.transcript.audio_file)
+        with open(target_path, 'wb') as f:
+            f.write(b"dummy")
+        response = self.client.post(reverse('delete_transcript', args=[self.transcript.id]), {
+            'delete_files': 'true'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Transcript.objects.filter(id=self.transcript.id).exists())
+        self.assertFalse(os.path.exists(target_path))
+
+    @patch('transcription.views.SAVE_DIR', new=TEST_MEDIA_ROOT)
+    @patch('transcription.views.settings.SAVE_DIR', new=TEST_MEDIA_ROOT)
+    def test_import_project_view(self):
+        import json
+        import_dir = os.path.join(TEST_MEDIA_ROOT, 'ImportTestProject')
+        os.makedirs(os.path.join(import_dir, 'audio'), exist_ok=True)
+        
+        details_data = [
+            {"audio_filepath": "audio/test1.wav", "text": "Test 1"},
+            {"audio_filepath": "audio/test2.wav", "text": "Test 2"}
+        ]
+        with open(os.path.join(import_dir, 'details.json'), 'w') as f:
+            json.dump(details_data, f)
+            
+        with open(os.path.join(import_dir, 'audio', 'test1.wav'), 'wb') as f:
+            f.write(b"dummy")
+
+        response = self.client.post(reverse('import_project'), {
+            'folder_name': 'ImportTestProject',
+            'sample_rate': 16000
+        }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('audio/test2.wav', data['missing_files'])
+        self.assertTrue(Project.objects.filter(name='ImportTestProject').exists())
