@@ -37,6 +37,7 @@
                         <h2>{{ project.name }}</h2>
                         <span class="project-meta">Sample rate: {{ project.sample_rate }} Hz</span>
                         <div class="project-meta">{{ project.created_at|date:"d M Y" }}</div>
+                        <span class="project-meta">No. transcripts: {{ project.transcripts.count }}</span>
                     </div>
                     <div>
                         <button class="btn btn-danger delete-project-btn" data-id="{{ project.id }}"
