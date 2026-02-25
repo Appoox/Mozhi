@@ -32,6 +32,7 @@ def project_detail(request, project_id):
     paginator = Paginator(transcripts_list, PAGE_NUM)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    transcripts_count = transcripts_list.count()
 
     # Annotate each transcript on the current page with audio_exists so the
     # template can show a warning badge without an extra DB or fs round-trip.
@@ -40,7 +41,9 @@ def project_detail(request, project_id):
 
     return render(request, 'export/project_detail.html', {
         'project': project,
-        'page_obj': page_obj
+        'page_obj': page_obj,
+        'transcripts_count': transcripts_list,
+
     })
 
 
