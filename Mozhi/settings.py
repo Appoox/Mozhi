@@ -143,3 +143,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#Custom Variables for default superuser creation
+SUPERUSER_USERNAME = env.str("SUPERUSER_USERNAME", default='admin')
+SUPERUSER_EMAIL = env.str("SUPERUSER_EMAIL", default='admin@example.com')
+SUPERUSER_PASSWORD = env.str("SUPERUSER_PASSWORD", default= 'admin')
