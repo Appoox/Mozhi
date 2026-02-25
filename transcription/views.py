@@ -35,10 +35,13 @@ def project_detail(request, project_id):
     paginator = Paginator(transcripts_list, PAGE_NUM) # Show 10 transcripts per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    transcripts_count = transcripts_list.count()
     
-    return render(request, 'transcription/project_detail.html', {
+    return render(request, 
+        'transcription/project_detail.html', {
         'project': project,
         'page_obj': page_obj,
+        'transcripts_count' : transcripts_count,
     })
 
 

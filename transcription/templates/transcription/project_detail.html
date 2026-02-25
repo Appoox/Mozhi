@@ -19,7 +19,7 @@
         <span>Sample Rate: {{ project.sample_rate }} Hz</span>
         <span>Created: {{ project.created_at|date:"d M Y" }}</span>
         <span>Path: {{ project.folder_path }}/{{ project.name }}</span>
-        <span>No. transcripts: {{ project.transcripts.count }}</span>
+        <span>No. transcripts: {{ transcripts_count }}</span>
     </div>
 
     <div class="transcript-container">
