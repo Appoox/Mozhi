@@ -48,13 +48,6 @@ cancelDeleteBtn.onclick = () => {
     deleteModal.style.display = 'none';
 };
 
-window.onclick = (event) => {
-    if (event.target == deleteModal) {
-        deleteModal.style.display = 'none';
-    } else if (event.target == createModal) {
-        createModal.style.display = 'none';
-    }
-};
 
 confirmDeleteBtn.onclick = async () => {
     if (!projectToDelete) return;
@@ -101,7 +94,6 @@ if (cancelImportBtn) {
     };
 }
 
-// Update the global window.onclick to close the import modal
 window.onclick = (event) => {
     if (event.target == deleteModal) {
         deleteModal.style.display = 'none';

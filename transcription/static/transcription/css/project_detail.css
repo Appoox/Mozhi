@@ -608,3 +608,15 @@ h1 {
     background: #f0f2f5;
     /* Slightly different shade to pop against modal white */
 }
+
+.logout-icon {
+    background-color: #dd1717;
+    margin-left: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.logout-icon:hover {
+    background-color: #e8d5a3;
+    transform: scale(1.05);
+}

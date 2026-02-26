@@ -10,7 +10,13 @@
 <body>
     <div class="nav-bar">
         <a href="{% url 'export:project_list' %}" class="btn btn-secondary">← Back to Projects</a>
-        <button type="button" class="btn" id="exportJsonBtn" style="background-color: #4a90e2;">Export JSON</button>
+        <div>
+            <button type="button" class="btn" id="exportJsonBtn" style="background-color: #4a90e2;">Export JSON</button>
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn logout-icon">Logout</button>
+            </form>
+        </div>
     </div>
 
     <!-- Export Progress Modal -->
@@ -85,8 +91,10 @@
                     <button class="edit-transcript-btn" data-id="{{ transcript.id }}">Edit</button>
                 </h3>
                 <div class="transcript-section-content" style="border-left: none; padding-left: 0;">
-                    <div class="transcript-text" id="transcript-text-{{ transcript.id }}">{% if transcript.transcript %}{{ transcript.transcript }}{% else %}<em style="color: #999;">Transcription in progress or not
-                            available yet...</em>{% endif %}</div>
+                    <div class="transcript-text" id="transcript-text-{{ transcript.id }}">{% if transcript.transcript %}
+                        {{ transcript.transcript }} {% else %}
+                        <em style="color: #999;">Transcription in progress or not available yet...</em>{% endif %}
+                    </div>
 
                     <div class="edit-transcript-container" id="edit-container-{{ transcript.id }}">
                         <textarea class="edit-transcript-textarea"

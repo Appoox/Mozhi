@@ -285,3 +285,30 @@ h1 {
     color: #f39c12;
     border: 1px solid #f8e9a1;
 }
+
+.logout-icon {
+    /* background-image: url('/media/Logout.svg');  */
+    background-color: #dd1717;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-left: 10px;
+    /* text-indent: -9999px; This hides the text 'Logout' but keeps the icon */
+    /* width: 32px;
+    height: 32px; */
+    border: none;
+    cursor: pointer;
+}
+
+.logout-icon:hover {
+    background-color: #e8d5a3; /* Match your --gold-light */
+    transform: scale(1.05);
+}
+
+.import-btn {
+    margin-right: 10px;
+    background: #27ae60; 
+}
+
+/* .logout-icon:active {
+    transform: scale(0.95); */

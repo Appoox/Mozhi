@@ -48,6 +48,16 @@ ALLOWED_HOSTS = ["*"]
 #     'http://localhost:8000',
 #     ]
 
+#Login
+LOGIN_URL = 'login'
+
+# Where users are sent after a successful login
+REDIRECT_FIELD_NAME = 'next'
+LOGIN_REDIRECT_URL = 'project_list' 
+
+# Where users are sent after logging out
+LOGOUT_REDIRECT_URL = 'login'
+
 
 # Application definition
 
