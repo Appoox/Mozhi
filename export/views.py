@@ -6,7 +6,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from transcription.models import Project, Transcript
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 
+
+@login_required
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
 
@@ -19,12 +22,14 @@ def project_list(request):
         'page_obj': page_obj,
         })
 
+@login_required
 def _audio_path(transcript):
     """Return the absolute path to a transcript's audio file."""
     project = transcript.project
     return os.path.join(project.folder_path, project.name, 'audio', transcript.audio_file)
 
 
+@login_required
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     transcripts_list = project.transcripts.all().order_by('-created_at')
@@ -50,6 +55,7 @@ def project_detail(request, project_id):
 from django.http import StreamingHttpResponse
 import time
 
+@login_required
 def export_project_json(request, project_id):
     if request.method == 'POST':
         project = get_object_or_404(Project, id=project_id)
@@ -115,6 +121,7 @@ def export_project_json(request, project_id):
 
     return JsonResponse({'status': 'error', 'error': 'Method not allowed'}, status=405)
 
+@login_required
 def delete_project(request, project_id):
     """View to delete a project and optionally its physical files."""
     if request.method == 'POST':
@@ -136,6 +143,7 @@ def delete_project(request, project_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@login_required
 def delete_transcript(request, transcript_id):
     """View to delete an individual transcript and optionally its physical file."""
     if request.method == 'POST':

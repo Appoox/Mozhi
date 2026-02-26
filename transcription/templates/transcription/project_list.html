@@ -19,9 +19,13 @@
     <div class="page-header">
         <h1>Projects</h1>
         <div>
-            <button id="openImportModalBtn" class="btn" style="margin-right: 10px; background: #27ae60;">+ Import
-                Project</button>
+            <button id="openImportModalBtn" class="btn import-btn">+ Import Project</button>
             <button id="openCreateModalBtn" class="btn">+ New Project</button>
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" id="logoutBtn" class="btn logout-icon"> Logout </button>
+            </form>
+
         </div>
     </div>
     </div>
@@ -142,6 +146,8 @@
 
     <script>
         window.csrfToken = "{{ csrf_token }}";
+        window.logoutUrl = "{% url 'logout' %}";
+        window.loginUrl = "{% url 'login' %}";
     </script>
     <script src="{% static 'transcription/js/project_list.js' %}"></script>
 </body>

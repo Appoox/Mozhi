@@ -20,9 +20,15 @@ from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from transcription import views
+from django.contrib.auth import views as auth_views
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('users/login/', never_cache(csrf_exempt(auth_views.LoginView.as_view(redirect_authenticated_user=True))), name='login'),    
+    path('users/logout/', views.logout_view, name='logout'),    
+    path("users/", include("django.contrib.auth.urls")),
     path('', views.project_list, name='project_list'),
     path('projects/create/', views.create_project, name='create_project'),
     path('projects/import/', views.import_project, name='import_project'),

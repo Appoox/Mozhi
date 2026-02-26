@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Login — Mozhi</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --ink: #1a1a2e;
+            --cream: #f5f0e8;
+            --gold: #c9a84c;
+            --gold-light: #e8d5a3;
+            --rust: #a63d2f;
+            --sage: #5a7a6a;
+            --surface: #fffdf8;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--cream);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Sans', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 80%, rgba(201,168,76,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 20%, rgba(90,122,106,0.1) 0%, transparent 55%),
+                radial-gradient(ellipse 40% 40% at 60% 70%, rgba(166,61,47,0.07) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Tamil/decorative script watermark */
+        body::after {
+            content: 'മൊഴി';
+            position: fixed;
+            bottom: -40px;
+            right: -20px;
+            font-family: 'Playfair Display', serif;
+            font-size: 280px;
+            color: rgba(201,168,76,0.06);
+            line-height: 1;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .card {
+            background: var(--surface);
+            width: 420px;
+            border-radius: 4px;
+            box-shadow:
+                0 0 0 1px rgba(201,168,76,0.3),
+                0 20px 60px rgba(26,26,46,0.12),
+                0 4px 16px rgba(26,26,46,0.08);
+            position: relative;
+            overflow: hidden;
+            animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Top gold bar */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--rust), var(--gold), var(--sage));
+        }
+
+        .card-header {
+            padding: 48px 48px 32px;
+            border-bottom: 1px solid rgba(201,168,76,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--gold);
+            border-radius: 50%;
+            margin-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        .tagline {
+            font-size: 13px;
+            color: var(--sage);
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .card-body {
+            padding: 36px 48px 48px;
+        }
+
+        .welcome {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-style: italic;
+            color: var(--ink);
+            margin-bottom: 28px;
+            opacity: 0.7;
+        }
+
+        .error-msg {
+            background: rgba(166,61,47,0.08);
+            border-left: 3px solid var(--rust);
+            color: var(--rust);
+            font-size: 13.5px;
+            padding: 12px 16px;
+            border-radius: 0 3px 3px 0;
+            margin-bottom: 24px;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Django form field styling */
+        .card-body p {
+            margin-bottom: 20px;
+        }
+
+        .card-body label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--sage);
+            margin-bottom: 8px;
+        }
+
+        .card-body input[type="text"],
+        .card-body input[type="password"],
+        .card-body input[type="email"] {
+            width: 100%;
+            padding: 13px 16px;
+            background: var(--cream);
+            border: 1px solid rgba(201,168,76,0.25);
+            border-radius: 3px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            color: var(--ink);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            appearance: none;
+        }
+
+        .card-body input:focus {
+            border-color: var(--gold);
+            background: #fffef9;
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+        }
+
+        .card-body input::placeholder {
+            color: rgba(26,26,46,0.3);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+            background: var(--ink);
+            color: var(--gold-light);
+            border: none;
+            border-radius: 3px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.25s, transform 0.1s;
+        }
+
+        .submit-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(201,168,76,0.15) 100%);
+            pointer-events: none;
+        }
+
+        .submit-btn:hover {
+            background: #2a2a4a;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.99);
+        }
+
+        .card-footer {
+            padding: 20px 48px;
+            border-top: 1px solid rgba(201,168,76,0.12);
+            font-size: 12px;
+            color: rgba(26,26,46,0.4);
+            text-align: center;
+            letter-spacing: 0.02em;
+        }
+
+        /* Decorative corner ornament */
+        .ornament {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            opacity: 0.15;
+        }
+
+        .ornament svg { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="ornament">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18" stroke="#c9a84c" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="10" stroke="#c9a84c" stroke-width="1"/>
+            <line x1="20" y1="2" x2="20" y2="38" stroke="#c9a84c" stroke-width="1"/>
+            <line x1="2" y1="20" x2="38" y2="20" stroke="#c9a84c" stroke-width="1"/>
+        </svg>
+    </div>
+
+    <div class="card-header">
+        <div class="brand">
+            <span class="brand-name">മൊഴി</span>
+            <div class="brand-dot"></div>
+        </div>
+        <div class="tagline">Transcription Platform</div>
+    </div>
+
+    <div class="card-body">
+        <p class="welcome">Welcome back</p>
+
+        {% if form.errors %}
+            <div class="error-msg">
+                Your username and password didn't match. Please try again.
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="submit-btn">Sign In </button>
+        </form>
+    </div>
+
+</div>
+
+ <script>
+        // Check if the page was loaded from the browser's Back/Forward cache
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Force the browser to ask Django for the page again
+                window.location.reload(); 
+            }
+        });
+    </script>
+
+</body>
+</html>

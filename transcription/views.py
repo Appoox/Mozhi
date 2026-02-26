@@ -9,8 +9,17 @@ from .models import Transcript, Project
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
+from django.contrib.auth import logout as auth_logout
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 
+@csrf_exempt
+def logout_view(request):
+    if request.method == 'POST':
+        auth_logout(request)
+    return redirect('login')
 
+@login_required
 def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
     form = ProjectForm()
@@ -27,11 +36,11 @@ def project_list(request):
         })
 
 
-
+@login_required
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     transcripts_list = project.transcripts.all().order_by('-created_at')
-    
+
     paginator = Paginator(transcripts_list, PAGE_NUM) # Show 10 transcripts per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -45,6 +54,7 @@ def project_detail(request, project_id):
     })
 
 
+@login_required
 def create_project(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
@@ -74,6 +84,7 @@ from django.db import transaction
 from django.http import JsonResponse
 import os, json
 
+@login_required
 def import_project(request):
     if request.method == 'POST':
         form = ImportProjectForm(request.POST)
@@ -166,6 +177,7 @@ def import_project(request):
 
 from django.core.files.base import ContentFile
 
+@login_required
 def save_record(request):
     """View to save recorded audio and transcript from the browser."""
     if request.method == 'POST':
@@ -218,6 +230,7 @@ def save_record(request):
     return JsonResponse({'status': 'error', 'error': 'Method not allowed'}, status=405)
 
 
+@login_required
 def serve_audio(request, transcript_id):
     """Serves audio files from the project-specific folders."""
     transcript = get_object_or_404(Transcript, id=transcript_id)
@@ -231,6 +244,7 @@ def serve_audio(request, transcript_id):
 
 import shutil
 
+@login_required
 def delete_project(request, project_id):
     """View to delete a project and optionally its physical files."""
     if request.method == 'POST':
@@ -252,6 +266,7 @@ def delete_project(request, project_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@login_required
 def delete_transcript(request, transcript_id):
     """View to delete an individual transcript and its physical file."""
     if request.method == 'POST':
@@ -273,6 +288,7 @@ def delete_transcript(request, transcript_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@login_required
 def edit_transcript(request, transcript_id):
     """View to update the text of an existing transcript."""
     if request.method == 'POST':
