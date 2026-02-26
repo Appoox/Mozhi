@@ -232,6 +232,10 @@ h1 {
     margin: 0;
 }
 
+.modal-footer {
+    padding-top: 15px;
+}
+
 .close {
     cursor: pointer;
     font-size: 24px;
