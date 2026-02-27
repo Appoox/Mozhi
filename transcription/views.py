@@ -115,8 +115,21 @@ def import_project(request):
 
         try:
             json_path = os.path.join(full_target_dir, 'details.json')
-            with open(json_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+            try:
+                import json5
+                with open(json_path, 'r', encoding='utf-8-sig') as f:
+                    content = f.read()
+                    content = content.replace('\u00a0', ' ')
+                    # content = re.sub(r'("id":\s*)([a-zA-Z0-9_]+)', r'\1"\2"', content)
+                    # content = re.sub(r',\s*([\]}])', r'\1', content)
+                    # content = re.sub(r',\s*}', '}', content)          # trailing commas before }
+                    # content = re.sub(r',\s*]', ']', content)          # trailing commas before ]
+
+                    data = json5.loads(content)
+            except json.JSONDecodeError as e:
+                # This will now give you a much more specific error message if it still fails
+                return JsonResponse({'status': 'error', 'error': f'JSON error: {str(e)}'}, status=400)
+
 
             user = request.user if request.user.is_authenticated else None
             if not user:
