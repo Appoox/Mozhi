@@ -1,4 +1,4 @@
-from Mozhi.settings import PAGE_NUM, SAVE_DIR, BATCH_SIZE
+from Mozhi.settings import PAGE_NUM, SAVE_DIR, BATCH_SIZE, LINES_PER_READ
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse, FileResponse
@@ -100,15 +100,58 @@ def create_project(request):
 
 from django.db import transaction
 from django.http import JsonResponse
-import os, json
+import os, json, json5
+
+def iter_objects_from_file(filepath: str, lines_per_read: int):
+    """
+    Reads `lines_per_read` lines at a time, accumulates text until
+    a complete JSON object is detected (balanced braces), then
+    yields it as a parsed dict. Never holds more than a few lines
+    + one object in memory at once.
+    """
+    accumulator = ''
+    depth = 0
+    in_string = False
+    escape_next = False
+
+    with open(filepath, 'r', encoding='utf-8-sig') as f:
+        while True:
+            lines = f.readlines(lines_per_read)
+            if not lines:
+                break
+
+            for raw_line in lines:
+                line = raw_line.replace('\u00a0', ' ')  # preprocess per line
+
+                for char in line:
+                    if escape_next:
+                        escape_next = False
+                    elif char == '\\' and in_string:
+                        escape_next = True
+                    elif char == '"':
+                        in_string = not in_string
+                    elif not in_string:
+                        if char == '{':
+                            depth += 1
+                        elif char == '}':
+                            depth -= 1
+
+                    if depth > 0:
+                        accumulator += char
+                    elif depth == 0 and accumulator.strip():
+                        accumulator += char  # capture the closing '}'
+                        try:
+                            yield json5.loads(accumulator.strip())
+                        except Exception as e:
+                            print(f"Skipping malformed object: {e}\n{accumulator[:100]}")
+                        accumulator = ''
 
 @csrf_exempt
 @login_required
 def import_project(request):
     if request.method == 'POST':
         form = ImportProjectForm(request.POST)
-        
-        # Check if it's an AJAX request
+
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
         if not form.is_valid():
@@ -120,8 +163,7 @@ def import_project(request):
         folder_name = form.cleaned_data['folder_name']
         sample_rate = form.cleaned_data['sample_rate']
         full_target_dir = os.path.join(SAVE_DIR, folder_name)
-        
-        # Check if project already exists in database
+
         if Project.objects.filter(name=folder_name).exists():
             if is_ajax:
                 return JsonResponse({'status': 'error', 'error': f'Project "{folder_name}" already exists. Please choose a different name or delete the existing project first.'}, status=400)
@@ -134,21 +176,6 @@ def import_project(request):
 
         try:
             json_path = os.path.join(full_target_dir, 'details.json')
-            try:
-                import json5
-                with open(json_path, 'r', encoding='utf-8-sig') as f:
-                    content = f.read()
-                    content = content.replace('\u00a0', ' ')
-                    # content = re.sub(r'("id":\s*)([a-zA-Z0-9_]+)', r'\1"\2"', content)
-                    # content = re.sub(r',\s*([\]}])', r'\1', content)
-                    # content = re.sub(r',\s*}', '}', content)          # trailing commas before }
-                    # content = re.sub(r',\s*]', ']', content)          # trailing commas before ]
-
-                    data = json5.loads(content)
-            except json.JSONDecodeError as e:
-                # This will now give you a much more specific error message if it still fails
-                return JsonResponse({'status': 'error', 'error': f'JSON error: {str(e)}'}, status=400)
-
 
             user = request.user if request.user.is_authenticated else None
             if not user:
@@ -156,6 +183,7 @@ def import_project(request):
                 user = User.objects.filter(is_superuser=True).first() or User.objects.first()
 
             missing_files = []
+            total_imported = 0
 
             with transaction.atomic():
                 project = Project.objects.create(
@@ -164,44 +192,45 @@ def import_project(request):
                     sample_rate=sample_rate,
                 )
 
-                for i in range(0, len(data), BATCH_SIZE):
-                    batch = data[i : i + BATCH_SIZE]
-                    transcripts_to_create = []
+                batch = []
+                for item in iter_objects_from_file(json_path, lines_per_read=LINES_PER_READ):
+                    audio_rel_path = item.get('audio_filepath')
+                    audio_full_path = os.path.join(full_target_dir, audio_rel_path)
 
-                    for item in batch:
-                        audio_rel_path = item.get('audio_filepath')
-                        audio_full_path = os.path.join(full_target_dir, audio_rel_path)
+                    if not os.path.exists(audio_full_path):
+                        missing_files.append(audio_rel_path)
+                        continue
 
-                        # Validation: Log if audio is missing and continue
-                        if not os.path.exists(audio_full_path):
-                            missing_files.append(audio_rel_path)
-                            continue
-
-                        # Clean the path to make it playable
-                        clean_filename = os.path.basename(audio_rel_path)
-
-                        transcripts_to_create.append(
-                            Transcript(
-                                project=project,
-                                user=user,
-                                transcript=item.get('text'),
-                                audio_file=clean_filename
-                            )
+                    batch.append(
+                        Transcript(
+                            project=project,
+                            user=user,
+                            transcript=item.get('text'),
+                            audio_file=os.path.basename(audio_rel_path),
                         )
-                    Transcript.objects.bulk_create(transcripts_to_create)
+                    )
+
+                    if len(batch) >= BATCH_SIZE:
+                        Transcript.objects.bulk_create(batch)
+                        total_imported += len(batch)
+                        batch = []
+
+                # flush any remaining items
+                if batch:
+                    Transcript.objects.bulk_create(batch)
+                    total_imported += len(batch)
 
             if is_ajax:
                 return JsonResponse({
-                    'status': 'success', 
-                    'message': f'Imported {len(data) - len(missing_files)} items',
-                    'missing_files': missing_files
+                    'status': 'success',
+                    'message': f'Imported {total_imported} items',
+                    'missing_files': missing_files,
                 })
-            
+
             return redirect('project_list')
 
         except Exception as e:
             if is_ajax:
-                # Returning JSON here prevents the "unexpected character" error
                 return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
             return redirect('project_list')
 
