@@ -7,6 +7,7 @@ from django.http import HttpResponse, JsonResponse
 from transcription.models import Project, Transcript
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 
 
 @login_required
@@ -55,6 +56,7 @@ def project_detail(request, project_id):
 from django.http import StreamingHttpResponse
 import time
 
+@csrf_exempt
 @login_required
 def export_project_json(request, project_id):
     if request.method == 'POST':
@@ -121,6 +123,7 @@ def export_project_json(request, project_id):
 
     return JsonResponse({'status': 'error', 'error': 'Method not allowed'}, status=405)
 
+@csrf_exempt
 @login_required
 def delete_project(request, project_id):
     """View to delete a project and optionally its physical files."""
@@ -143,6 +146,7 @@ def delete_project(request, project_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@csrf_exempt
 @login_required
 def delete_transcript(request, transcript_id):
     """View to delete an individual transcript and optionally its physical file."""

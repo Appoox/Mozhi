@@ -9,7 +9,8 @@ from .models import Transcript, Project
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
-from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import logout as auth_logout, login as auth_login
+from django.contrib.auth.forms import AuthenticationForm
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
@@ -18,6 +19,22 @@ def logout_view(request):
     if request.method == 'POST':
         auth_logout(request)
     return redirect('login')
+
+@csrf_exempt
+def custom_login_view(request):
+    if request.user.is_authenticated:
+        return redirect('project_list')
+    
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            auth_login(request, user)
+            return redirect('project_list')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'registration/login.html', {'form': form})
 
 @login_required
 def project_list(request):
@@ -54,6 +71,7 @@ def project_detail(request, project_id):
     })
 
 
+@csrf_exempt
 @login_required
 def create_project(request):
     if request.method == 'POST':
@@ -84,6 +102,7 @@ from django.db import transaction
 from django.http import JsonResponse
 import os, json
 
+@csrf_exempt
 @login_required
 def import_project(request):
     if request.method == 'POST':
@@ -190,6 +209,7 @@ def import_project(request):
 
 from django.core.files.base import ContentFile
 
+@csrf_exempt
 @login_required
 def save_record(request):
     """View to save recorded audio and transcript from the browser."""
@@ -257,6 +277,7 @@ def serve_audio(request, transcript_id):
 
 import shutil
 
+@csrf_exempt
 @login_required
 def delete_project(request, project_id):
     """View to delete a project and optionally its physical files."""
@@ -279,6 +300,7 @@ def delete_project(request, project_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@csrf_exempt
 @login_required
 def delete_transcript(request, transcript_id):
     """View to delete an individual transcript and its physical file."""
@@ -301,6 +323,7 @@ def delete_transcript(request, transcript_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@csrf_exempt
 @login_required
 def edit_transcript(request, transcript_id):
     """View to update the text of an existing transcript."""

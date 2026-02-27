@@ -26,7 +26,7 @@ from django.views.decorators.cache import never_cache
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('users/login/', never_cache(csrf_exempt(auth_views.LoginView.as_view(redirect_authenticated_user=True))), name='login'),    
+    path('users/login/', never_cache(views.custom_login_view), name='login'),    
     path('users/logout/', views.logout_view, name='logout'),    
     path("users/", include("django.contrib.auth.urls")),
     path('', views.project_list, name='project_list'),
