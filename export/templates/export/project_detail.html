@@ -1,4 +1,5 @@
 {% load static %}
+{% load duration_filters %}
 <!DOCTYPE html>
 <html>
 
@@ -45,6 +46,7 @@
         <span>Created: {{ project.created_at|date:"d M Y" }}</span>
         <span>Path: {{ project.folder_path }}/{{ project.name }}</span>
         <span class="project-meta">No. transcripts: {{ project.transcripts.count }}</span>
+        <span class="project-meta">Total Duration: {{ project.total_duration|format_duration }}</span>
     </div>
 
     <div class="transcript-container">

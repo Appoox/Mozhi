@@ -1,6 +1,21 @@
 import uuid
+import wave
 from django.db import models
-from django.contrib.auth.models import User 
+from django.contrib.auth.models import User
+
+
+def get_wav_duration(filepath: str) -> float:
+    """Return the duration in seconds of a WAV file by reading its header."""
+    try:
+        with wave.open(filepath, 'rb') as wf:
+            frames = wf.getnframes()
+            rate = wf.getframerate()
+            if rate == 0:
+                return 0.0
+            return frames / float(rate)
+    except Exception:
+        return 0.0
+
 
 class Project(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -14,6 +29,7 @@ class Project(models.Model):
     ]
     sample_rate = models.IntegerField(choices=SAMPLE_RATE_CHOICES, default=44100, help_text="Sample rate in Hz")
     created_at = models.DateTimeField(auto_now_add=True)
+    total_duration = models.FloatField(default=0.0, help_text="Total audio duration in seconds")
     folder_path = models.CharField(max_length=255, default='./', blank=True, null=True, help_text="Select a base folder. Subfolders for the project and audio will be created automatically.")
 
     def __str__(self):

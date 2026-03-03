@@ -1,4 +1,5 @@
 {% load static %}
+{% load duration_filters %}
 <!DOCTYPE html>
 <html>
 
@@ -28,6 +29,7 @@
                         <span class="project-meta">Sample rate: {{ project.sample_rate }} Hz</span>
                         <div class="project-meta">{{ project.created_at|date:"d M Y" }}</div>
                         <span class="project-meta">No. transcripts: {{ project.transcripts.count }}</span>
+                        <div class="project-meta">Total Duration: {{ project.total_duration|format_duration }}</div>
                     </div>
                     <div>
                         <button class="btn btn-danger delete-project-btn" data-id="{{ project.id }}"

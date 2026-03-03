@@ -5,7 +5,7 @@ from django.http import HttpResponse, JsonResponse, FileResponse
 import os
 import shutil
 from .forms import ProjectForm, ImportProjectForm
-from .models import Transcript, Project
+from .models import Transcript, Project, get_wav_duration
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
@@ -184,6 +184,7 @@ def import_project(request):
 
             missing_files = []
             total_imported = 0
+            total_duration = 0.0
 
             with transaction.atomic():
                 project = Project.objects.create(
@@ -200,6 +201,8 @@ def import_project(request):
                     if not os.path.exists(audio_full_path):
                         missing_files.append(audio_rel_path)
                         continue
+
+                    total_duration += get_wav_duration(audio_full_path)
 
                     batch.append(
                         Transcript(
@@ -219,6 +222,10 @@ def import_project(request):
                 if batch:
                     Transcript.objects.bulk_create(batch)
                     total_imported += len(batch)
+
+                # Update total duration on the project
+                project.total_duration = total_duration
+                project.save(update_fields=['total_duration'])
 
             if is_ajax:
                 return JsonResponse({
@@ -285,6 +292,11 @@ def save_record(request):
             transcript_instance.audio_file = filename
             transcript_instance.save()
 
+            # 4. Update project total duration
+            duration = get_wav_duration(target_path)
+            project.total_duration = (project.total_duration or 0) + duration
+            project.save(update_fields=['total_duration'])
+
             return JsonResponse({'status': 'success', 'transcript_id': str(transcript_instance.id)})
         except Exception as e:
             return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
@@ -338,11 +350,17 @@ def delete_transcript(request, transcript_id):
         delete_files = request.POST.get('delete_files') == 'true'
 
         try:
-            if delete_files:
-                project = transcript.project
-                target_path = os.path.join(project.folder_path, project.name, 'audio', transcript.audio_file)
-                if os.path.exists(target_path):
-                    os.remove(target_path)
+            project = transcript.project
+            target_path = os.path.join(project.folder_path, project.name, 'audio', transcript.audio_file)
+
+            # Subtract audio duration from project total
+            if os.path.exists(target_path):
+                duration = get_wav_duration(target_path)
+                project.total_duration = max(0, (project.total_duration or 0) - duration)
+                project.save(update_fields=['total_duration'])
+
+            if delete_files and os.path.exists(target_path):
+                os.remove(target_path)
             
             transcript.delete()
             return JsonResponse({'status': 'success'})
