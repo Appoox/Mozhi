@@ -16,7 +16,6 @@ from django.contrib.auth.decorators import login_required
 import librosa
 import wave
 
-@csrf_exempt
 def get_wav_duration(filepath: str) -> float:
     """Return the duration in seconds of a WAV file by reading its header."""
     try:
@@ -28,10 +27,11 @@ def get_wav_duration(filepath: str) -> float:
                 return 0.0
             return duration
     except Exception as e:
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+        logger.error(f"Failed to read duration for {filepath}: {e}")
+        return 0.0 
 
 
-@csrf_exempt
+
 def get_wav_duration_librosa(filepath):
     """Return the duration in seconds of a WAV file with librosa"""
     try:
@@ -39,7 +39,8 @@ def get_wav_duration_librosa(filepath):
         duration = librosa.get_duration(y=audio_data, sr=sample_rate)
         return duration
     except Exception as e:
-        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+        logger.error(f"Failed to read duration for {filepath}: {e}")
+        return 0.0
 
 @csrf_exempt
 def logout_view(request):
