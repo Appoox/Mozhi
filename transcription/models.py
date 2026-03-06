@@ -1,20 +1,8 @@
 import uuid
-import wave
 from django.db import models
 from django.contrib.auth.models import User
 
 
-def get_wav_duration(filepath: str) -> float:
-    """Return the duration in seconds of a WAV file by reading its header."""
-    try:
-        with wave.open(filepath, 'rb') as wf:
-            frames = wf.getnframes()
-            rate = wf.getframerate()
-            if rate == 0:
-                return 0.0
-            return frames / float(rate)
-    except Exception:
-        return 0.0
 
 
 class Project(models.Model):
