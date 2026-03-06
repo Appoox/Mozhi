@@ -5,7 +5,7 @@ from django.http import HttpResponse, JsonResponse, FileResponse
 import os
 import shutil
 from .forms import ProjectForm, ImportProjectForm
-from .models import Transcript, Project, get_wav_duration
+from .models import Transcript, Project
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
@@ -13,6 +13,33 @@ from django.contrib.auth import logout as auth_logout, login as auth_login
 from django.contrib.auth.forms import AuthenticationForm
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+import librosa
+import wave
+
+@csrf_exempt
+def get_wav_duration(filepath: str) -> float:
+    """Return the duration in seconds of a WAV file by reading its header."""
+    try:
+        with wave.open(filepath, 'rb') as wf:
+            frames = wf.getnframes()
+            rate = wf.getframerate()
+            duration = frames / float(rate)
+            if rate == 0:
+                return 0.0
+            return duration
+    except Exception as e:
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def get_wav_duration_librosa(filepath):
+    """Return the duration in seconds of a WAV file with librosa"""
+    try:
+        audio_data, sample_rate = librosa.load(filepath)
+        duration = librosa.get_duration(y=audio_data, sr=sample_rate)
+        return duration
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
 @csrf_exempt
 def logout_view(request):
@@ -144,6 +171,7 @@ def iter_objects_from_file(filepath: str, lines_per_read: int):
                             yield json5.loads(accumulator.strip())
                         except Exception as e:
                             print(f"Skipping malformed object: {e}\n{accumulator[:100]}")
+                            yield {'_error': f"Malformed JSON object: {e}"}
                         accumulator = ''
 
 @csrf_exempt
@@ -195,14 +223,23 @@ def import_project(request):
 
                 batch = []
                 for item in iter_objects_from_file(json_path, lines_per_read=LINES_PER_READ):
+                    if '_error' in item:
+                        missing_files.append(item['_error'])
+                        continue
+
                     audio_rel_path = item.get('audio_filepath')
+                    if audio_rel_path is None:
+                        missing_files.append("Missing 'audio_filepath' in JSON")
+                        continue
+
                     audio_full_path = os.path.join(full_target_dir, audio_rel_path)
 
                     if not os.path.exists(audio_full_path):
                         missing_files.append(audio_rel_path)
                         continue
 
-                    total_duration += get_wav_duration(audio_full_path)
+                    # total_duration += get_wav_duration(audio_full_path)
+                    total_duration += get_wav_duration_librosa(audio_full_path)
 
                     batch.append(
                         Transcript(
