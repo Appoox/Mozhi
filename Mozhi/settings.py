@@ -161,3 +161,29 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SUPERUSER_USERNAME = env.str("SUPERUSER_USERNAME", default='admin')
 SUPERUSER_EMAIL = env.str("SUPERUSER_EMAIL", default='admin@example.com')
 SUPERUSER_PASSWORD = env.str("SUPERUSER_PASSWORD", default= 'admin')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # This targets the logger in your views.py
+        'transcription': {  # Replace 'transcription' with your actual app name
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

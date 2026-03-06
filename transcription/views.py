@@ -15,6 +15,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 import librosa
 import wave
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_wav_duration(filepath: str) -> float:
     """Return the duration in seconds of a WAV file by reading its header."""
@@ -35,6 +38,7 @@ def get_wav_duration(filepath: str) -> float:
 def get_wav_duration_librosa(filepath):
     """Return the duration in seconds of a WAV file with librosa"""
     try:
+        logger.info(f"Processing file: {filepath}")
         audio_data, sample_rate = librosa.load(filepath)
         duration = librosa.get_duration(y=audio_data, sr=sample_rate)
         return duration
@@ -331,7 +335,7 @@ def save_record(request):
             transcript_instance.save()
 
             # 4. Update project total duration
-            duration = get_wav_duration(target_path)
+            duration = get_wav_duration_librosa(target_path)
             project.total_duration = (project.total_duration or 0) + duration
             project.save(update_fields=['total_duration'])
 
@@ -393,7 +397,7 @@ def delete_transcript(request, transcript_id):
 
             # Subtract audio duration from project total
             if os.path.exists(target_path):
-                duration = get_wav_duration(target_path)
+                duration = get_wav_duration_librosa(target_path)
                 project.total_duration = max(0, (project.total_duration or 0) - duration)
                 project.save(update_fields=['total_duration'])
 
