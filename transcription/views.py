@@ -25,13 +25,21 @@ def get_wav_duration(filepath: str) -> float:
         with wave.open(filepath, 'rb') as wf:
             frames = wf.getnframes()
             rate = wf.getframerate()
-            duration = frames / float(rate)
-            if rate == 0:
+            
+            # Check for zero to prevent ZeroDivisionError
+            if rate <= 0:
+                logger.warning(f"Invalid framerate {rate} for {filepath}")
                 return 0.0
+                
+            duration = frames / float(rate)
             return duration
+    except wave.Error as e:
+        # Specifically catch wave-related errors (e.g., not a valid WAV)
+        logger.error(f"File {filepath} is not a valid WAV format: {e}")
+        return 0.0
     except Exception as e:
-        logger.error(f"Failed to read duration for {filepath}: {e}")
-        return 0.0 
+        logger.error(f"Unexpected error reading {filepath}: {e}")
+        return 0.0
 
 
 
@@ -39,8 +47,8 @@ def get_wav_duration_librosa(filepath):
     """Return the duration in seconds of a WAV file with librosa"""
     try:
         logger.info(f"Processing file: {filepath}")
-        audio_data, sample_rate = librosa.load(filepath)
-        duration = librosa.get_duration(y=audio_data, sr=sample_rate)
+        # audio_data, sample_rate = librosa.load(filepath)
+        duration = librosa.get_duration(path=filepath)
         return duration
     except Exception as e:
         logger.error(f"Failed to read duration for {filepath}: {e}")
